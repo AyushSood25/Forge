@@ -1,0 +1,10 @@
+{
+  "appId": "dev.ayushsood.forge",
+  "appName": "Forge",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorUpdater": {
+      "autoUpdate": false
+    }
+  }
+}
