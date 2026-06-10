@@ -3345,6 +3345,15 @@ window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
 <script>
+// Tell the over-the-air updater this version loaded OK (prevents auto-rollback once OTA is live).
+// Guarded so it's a no-op in a normal browser.
+try {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater
+      && window.Capacitor.Plugins.CapacitorUpdater.notifyAppReady) {
+    window.Capacitor.Plugins.CapacitorUpdater.notifyAppReady();
+  }
+} catch (e) { /* not running inside the app — ignore */ }
+
 // ============= DATA =============
 const START_DATE = '2026-05-23';
 const START_WEIGHT = 118;

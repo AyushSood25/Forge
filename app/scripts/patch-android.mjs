@@ -3,6 +3,7 @@
 // Idempotent: safe to run more than once.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 
 const manifestPath = 'android/app/src/main/AndroidManifest.xml';
 const varsPath = 'android/variables.gradle';
@@ -56,4 +57,22 @@ if (existsSync(varsPath)) {
   } else {
     console.warn('[patch-android] minSdkVersion not found in variables.gradle — set it to 26 if the build complains');
   }
+}
+
+// 5) Generate the app launcher icon + splash from /assets (Forge branding).
+//    Runs @capacitor/assets now that android/ exists. If it fails for any reason,
+//    the build still succeeds with the default icon, so a logo hiccup never blocks a build.
+if (existsSync('assets/icon-only.png')) {
+  try {
+    console.log('[patch-android] generating app icon + splash from assets/ ...');
+    execSync(
+      "npx --yes @capacitor/assets generate --android --iconBackgroundColor '#c4633f' --iconBackgroundColorDark '#a8512f'",
+      { stdio: 'inherit' }
+    );
+    console.log('[patch-android] icon + splash generated');
+  } catch (e) {
+    console.warn('[patch-android] icon generation skipped (default icon kept):', e.message);
+  }
+} else {
+  console.warn('[patch-android] assets/icon-only.png not found — keeping default icon');
 }
