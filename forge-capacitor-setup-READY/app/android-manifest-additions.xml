@@ -1,0 +1,43 @@
+<!-- =========================================================================
+     HEALTH CONNECT — AndroidManifest additions
+     Merge these into android/app/src/main/AndroidManifest.xml AFTER you run
+     `npx cap add android`.  The @capgo/capacitor-health plugin already declares
+     the <uses-permission android:name="android.permission.health.READ_STEPS"/>
+     etc., so you do NOT add those here — only the three blocks below.
+
+     If anything here disagrees with the plugin's own example app, prefer the
+     plugin's version:  node_modules/@capgo/capacitor-health/android  and the
+     repo's example-app/android/app/src/main/AndroidManifest.xml on GitHub.
+     ========================================================================= -->
+
+<!-- 1) Let the app see whether Health Connect is installed.
+        Place as a direct child of <manifest>, next to other <queries>/<uses-permission>. -->
+<queries>
+    <package android:name="com.google.android.apps.healthdata" />
+</queries>
+
+<!-- 2) Permissions-rationale handling. Place INSIDE <application>.
+        Points Health Connect at your existing .MainActivity so it can show
+        your privacy policy / rationale. -->
+<!-- Android 13 and below -->
+<activity-alias
+    android:name="ViewPermissionUsageActivity"
+    android:exported="true"
+    android:targetActivity=".MainActivity"
+    android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+        <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+    </intent-filter>
+</activity-alias>
+
+<!-- 3) Also add this intent-filter INSIDE your existing <activity .MainActivity> block
+        (for the older rationale intent on Android 13-). -->
+<!--
+<activity android:name=".MainActivity" ... >
+    ...
+    <intent-filter>
+        <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+    </intent-filter>
+</activity>
+-->
