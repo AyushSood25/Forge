@@ -1,0 +1,44 @@
+# Instant updates — the path you'll use ~99% of the time. Any push to main that
+# touches the web app pushes a new bundle to Capgo; your installed app downloads it
+# in the background and applies on next launch. NO rebuild, NO reinstall.
+#
+# Required secret:  CAPGO_TOKEN  (from the Capgo dashboard)
+
+name: OTA web update (Capgo)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'index.html'
+      - 'manifest.json'
+      - 'privacypolicy.html'
+      - 'brand/**'
+      - '*.png'
+      - '*.svg'
+  workflow_dispatch:
+
+jobs:
+  ota:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build www/ bundle
+        working-directory: app
+        run: node scripts/copy-web.mjs
+
+      # appId + webDir are read from app/capacitor.config.json. If the CLI changed,
+      # check `npx @capgo/cli@latest bundle upload --help`.
+      - name: Upload OTA bundle to Capgo
+        working-directory: app
+        run: >
+          npx @capgo/cli@latest bundle upload
+          --channel production
+          --path www
+          --bundle "1.0.${{ github.run_number }}"
+          --apikey "${{ secrets.CAPGO_TOKEN }}"

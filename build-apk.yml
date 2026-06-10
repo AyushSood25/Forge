@@ -1,0 +1,91 @@
+# Builds the Forge APK entirely on GitHub's servers — nothing runs on your computer.
+# Run it from the Actions tab and choose the build type:
+#
+#   debug   = NO signing, NO secrets needed. Use this for your FIRST build to prove
+#             the pipeline + Health Connect actually work. It installs fine for
+#             personal use. This isolates the build mechanics from signing.
+#   release = signed, the keeper. Needs the 4 ANDROID_* secrets (see SETUP.md /
+#             gen-keystore.yml). Switch to this once a debug build is green.
+#
+# Day-to-day WEB edits do NOT use this — they go over the air via ota.yml.
+# Re-run this only when you change native bits (the app/ folder, plugins, manifest).
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Which APK to build"
+        type: choice
+        options:
+          - debug
+          - release
+        default: debug
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # ubuntu-latest ships an Android SDK, but this guarantees a known platform +
+      # build-tools are present and all licenses are accepted, so the first build
+      # doesn't die on a missing SDK package / unaccepted license. If it ever causes
+      # trouble, this single step is safe to delete.
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Capacitor + plugins
+        working-directory: app
+        run: npm install
+
+      - name: Build www/ bundle from the web app
+        working-directory: app
+        run: node scripts/copy-web.mjs
+
+      - name: Generate the Android project
+        working-directory: app
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Configure Health Connect (manifest + minSdk)
+        working-directory: app
+        run: node scripts/patch-android.mjs
+
+      # ---------- DEBUG path: no signing, no secrets ----------
+      - name: Build debug APK
+        if: ${{ inputs.build_type == 'debug' }}
+        working-directory: app/android
+        run: ./gradlew assembleDebug --stacktrace
+
+      # ---------- RELEASE path: signed, needs the 4 ANDROID_* secrets ----------
+      - name: Decode signing keystore
+        if: ${{ inputs.build_type == 'release' }}
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "${{ github.workspace }}/app/android/app/forge.keystore"
+
+      - name: Build signed release APK
+        if: ${{ inputs.build_type == 'release' }}
+        working-directory: app/android
+        run: |
+          ./gradlew assembleRelease --stacktrace \
+            -Pandroid.injected.signing.store.file="${{ github.workspace }}/app/android/app/forge.keystore" \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-${{ inputs.build_type }}-apk
+          path: app/android/app/build/outputs/apk/${{ inputs.build_type }}/*.apk
+          if-no-files-found: error
