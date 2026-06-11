@@ -2,9 +2,13 @@
   "appId": "dev.ayushsood.forge",
   "appName": "Forge",
   "webDir": "www",
+  "server": {
+    "url": "https://forge.ayushsood25.workers.dev",
+    "cleartext": false
+  },
   "plugins": {
     "CapacitorUpdater": {
-      "autoUpdate": true
+      "autoUpdate": false
     }
   }
 }

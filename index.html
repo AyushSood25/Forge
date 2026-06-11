@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FORGE BUILD: V9.14 (steps via Health Connect wired into dashboard; based on V9.11) -->
+<!-- FORGE BUILD: V9.15 (APK switched to remote-URL OTA — loads the live Cloudflare site; web content otherwise unchanged from V9.14) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -3184,7 +3184,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="s-meta">Until next time</div>
  </button>
 
- <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.14</span></div>
+ <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.15</span></div>
 
  </div>
 </div>
@@ -5465,7 +5465,7 @@ async function logShake() {
  toast(`Protein shake logged — ${scoops * 25}g protein added`);
 }
 
-try{window.FORGE_BUILD='v9.14';console.log('%c[Forge] build v9.14 \u2014 steps via Health Connect active','color:#7bb86f;font-weight:700');}catch(e){}
+try{window.FORGE_BUILD='v9.15';console.log('%c[Forge] build v9.15 \u2014 remote-URL OTA active','color:#7bb86f;font-weight:700');}catch(e){}
 /* ===== FORGE FOOD DB + ENGINE (injected; LLM parses, JS computes) ===== */
 /* ============================================================
    FORGE FOOD DATABASE  (FOOD_DB)
