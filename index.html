@@ -7840,84 +7840,74 @@ function fileToResizedBase64(file, maxDim) {
    so nothing wrong ever lands in the log without your OK. */
 const QL_LABELS = { preworkout: 'Pre-Workout', breakfast: 'Breakfast', lunch: 'Lunch', snack: 'Snack', bridge: 'Bridge Snack', dinner: 'Dinner' };
 let qlCat = 'breakfast';
-let qlMicActive = false;   // mic session running
-let qlRec = null;          // SpeechRecognition instance
+let qlMicActive = false;   // a take is currently recording / listening
+let qlRec = null;          // native SpeechRecognition (Chrome) — engine A
+let qlMedia = null;        // MediaRecorder (Whisper upload) — engine B
+let qlChunks = [];
 let qlMicBase = '';        // text already in the box when this take started
-let qlMicFinal = '';       // finalised words from this take
+let qlMicFinal = '';       // finalised words from this take (engine A)
 let qlMicErr = false;
-let qlBusy = false;
-let qlPending = null; // { items, via, provider, recipe?, frac, potW, servW, name, save } awaiting confirmation
-let qlRecipe = false;  // true => input is a raw-ingredient list of one cooked dish
+let qlMicCancel = false;   // sheet closed / send pressed mid-take -> discard take
+let qlMicTimer = null;
+let qlMicT0 = 0;
+const QL_VOICE_LS = 'forge_voice_mode';
 
-function escapeHTML(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
+/* Android WebView shells never support SpeechRecognition (it is Chrome-only),
+   and a shell built without RECORD_AUDIO cannot even prompt for the mic.
+   Engine B records audio locally and transcribes through Groq Whisper, which
+   works anywhere getUserMedia works — Chrome, Firefox, and a properly
+   permissioned APK shell. */
+function qlIsWebView() {
+  const ua = navigator.userAgent || '';
+  return /;\s?wv\)/.test(ua) || /\bVersion\/\d[\d.]*\s+Chrome\/[\d.]+\s+Mobile\b/.test(ua) || /Median|GoNative/i.test(ua);
 }
-
-function defaultQlCat() {
-  const h = new Date().getHours();
-  if (h < 10) return 'breakfast';
-  if (h < 14) return 'lunch';
-  if (h < 17) return 'snack';
-  if (h < 20) return 'bridge';
-  return 'dinner';
+function qlVoiceEngine() {
+  const saved = localStorage.getItem(QL_VOICE_LS);
+  if (saved === 'whisper' || saved === 'native') return saved;
+  const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  return (hasSR && !qlIsWebView()) ? 'native' : 'whisper';
 }
-function openQuickLog() {
-  if (!qlPending) {
-    qlCat = defaultQlCat();
-    qlRecipe = false;
-    qlApplyMode();
-    qlSetStatus('');
-  }
-  document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === qlCat));
-  $('qlOverlay').classList.add('open');
-  $('qlSheet').classList.add('open');
-  haptic('open');
-  if (qlPending) { qlRerender(); }
-  else setTimeout(() => { const i = $('qlInput'); if (i) i.focus(); }, 260);
+function qlMicPermMsg() {
+  return qlIsWebView()
+    ? 'The app shell has no mic permission — the APK must be rebuilt with RECORD_AUDIO (exact steps are in our chat). Until then, open Forge in Chrome and voice works there.'
+    : 'Mic permission denied — tap the lock icon by the address bar → Permissions → Microphone → Allow, then retry.';
 }
-function closeQuickLog() {
-  qlStopMic();
-  $('qlOverlay').classList.remove('open');
-  $('qlSheet').classList.remove('open');
-  // a pending review survives an accidental close — reopen to continue
-}
-function qlSetCat(cat) {
-  qlCat = cat;
-  document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-  if (qlPending) qlRerender(); // confirm button label follows the category
-  haptic('tap');
-}
-function qlKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitQuickLog(); }
-}
-function qlResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
-function qlSetStatus(msg, isErr) {
-  const s = $('qlStatus'); if (!s) return;
-  s.textContent = msg || '';
-  s.classList.toggle('err', !!isErr);
-}
-/* ----- voice input: tap to talk, tap to stop; each take APPENDS so you can
-   dictate ingredient-by-ingredient while cooking, then send once at the end ----- */
-function qlSpeechSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
-function qlToggleMic() {
-  if (qlMicActive) { try { qlRec && qlRec.stop(); } catch (e) {} return; } // tap #2 = stop & keep text
-  if (!qlSpeechSupported()) {
-    qlSetStatus('Voice input is not available in this app shell — open Forge in Chrome, or type instead.', true);
-    return;
-  }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  qlRec = new SR();
-  qlRec.lang = 'en-IN';          // Indian English; handles Hinglish food words well
-  qlRec.continuous = true;       // survive short thinking pauses within one take
-  qlRec.interimResults = true;   // words appear live as you speak
-  qlRec.maxAlternatives = 1;
+function qlMicCaptureBase() {
   const input = $('qlInput');
   const cur = (input ? input.value : '').replace(/[\s,]+$/, '').trim();
-  qlMicBase = cur ? cur + ', ' : ''; // comma keeps the parser happy between takes
+  qlMicBase = cur ? cur + ', ' : '';
+}
+function qlMicCommit(text) {
+  const input = $('qlInput'); if (!input) return;
+  const v = (qlMicBase + String(text || '')).replace(/\s+/g, ' ').replace(/[\s,]+$/, '').trim();
+  input.value = v; qlResize(input);
+  if (!qlMicErr) qlSetStatus(v ? 'Added — tap 🎤 to add more, or send when done.' : '');
+}
+function qlToggleMic() {
+  if (qlMicActive) { qlEndTake(false); return; } // tap #2 = stop & keep the words
+  qlMicErr = false; qlMicCancel = false;
+  if (qlVoiceEngine() === 'native') qlStartNative(); else qlStartWhisper();
+}
+function qlEndTake(cancel) {
+  qlMicCancel = !!cancel;
+  if (qlRec) { try { qlRec.stop(); } catch (e) {} }
+  if (qlMedia && qlMedia.state === 'recording') { try { qlMedia.stop(); } catch (e) {} }
+}
+function qlStopMic() { if (qlMicActive) qlEndTake(true); }
+function qlMicUI(on) { const b = $('qlMicBtn'); if (b) b.classList.toggle('listening', !!on); }
+
+/* ----- engine A: native SpeechRecognition (live words as you speak) ----- */
+function qlStartNative() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return qlStartWhisper();
+  qlRec = new SR();
+  qlRec.lang = 'en-IN';          // Indian English; handles Hinglish food words well
+  qlRec.continuous = true;
+  qlRec.interimResults = true;
+  qlRec.maxAlternatives = 1;
+  qlMicCaptureBase();
   qlMicFinal = '';
-  qlMicErr = false;
+  const input = $('qlInput');
   qlRec.onresult = ev => {
     let interim = '';
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
@@ -7927,30 +7917,118 @@ function qlToggleMic() {
     if (input) { input.value = (qlMicBase + (qlMicFinal + interim).replace(/\s+/g, ' ').trimStart()); qlResize(input); }
   };
   qlRec.onerror = ev => {
-    qlMicErr = true;
     const c = ev.error;
-    if (c === 'not-allowed' || c === 'service-not-allowed') qlSetStatus('Mic permission denied — allow the microphone for Forge and try again.', true);
+    qlMicErr = true;
+    if (c === 'not-allowed' || c === 'service-not-allowed') {
+      // this engine is blocked here -> hand the job to Whisper if we can
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && getGroqKey()) {
+        try { localStorage.setItem(QL_VOICE_LS, 'whisper'); } catch (e) {}
+        qlSetStatus('Switching to Forge transcription…');
+        setTimeout(() => { qlMicErr = false; qlMicCancel = false; qlStartWhisper(); }, 120);
+      } else qlSetStatus(qlMicPermMsg(), true);
+    }
     else if (c === 'no-speech') qlSetStatus('Heard nothing — tap the mic and speak.', true);
     else if (c === 'audio-capture') qlSetStatus('No microphone found on this device.', true);
     else if (c === 'network') qlSetStatus('Voice needs internet — check connection and retry.', true);
     else if (c !== 'aborted') qlSetStatus('Voice error (' + c + ') — try again or type.', true);
   };
   qlRec.onend = () => {
+    qlRec = null;
     qlMicActive = false; qlMicUI(false);
-    if (input) {
-      const v = (qlMicBase + qlMicFinal).replace(/\s+/g, ' ').replace(/[\s,]+$/, '').trim();
-      input.value = v; qlResize(input);
-      if (!qlMicErr) qlSetStatus(v ? 'Added — tap 🎤 to add more, or send when done.' : '');
-    }
+    qlMicCommit(qlMicFinal);
     haptic('tap');
   };
-  try { qlRec.start(); } catch (e) { qlSetStatus('Could not start the mic — try again.', true); return; }
+  try { qlRec.start(); } catch (e) { qlRec = null; return qlStartWhisper(); }
   qlMicActive = true; qlMicUI(true);
   qlSetStatus('Listening… tap the mic again to stop.');
   haptic('tap');
 }
-function qlMicUI(on) { const b = $('qlMicBtn'); if (b) b.classList.toggle('listening', !!on); }
-function qlStopMic() { if (qlMicActive) { try { qlRec && qlRec.stop(); } catch (e) {} } }
+
+/* ----- engine B: record locally, transcribe via Groq Whisper ----- */
+function qlStartWhisper() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    qlSetStatus('This app shell exposes no microphone at all — open Forge in Chrome, or type instead.', true);
+    return;
+  }
+  if (!getGroqKey()) {
+    qlSetStatus('Voice transcription needs your Groq key — Menu → Forge AI keys.', true);
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }).then(stream => {
+    if (!window.MediaRecorder) {
+      stream.getTracks().forEach(t => t.stop());
+      qlSetStatus('Recording is not supported here — type instead.', true);
+      return;
+    }
+    qlMicErr = false;
+    qlMicCaptureBase();
+    let mime = '';
+    try {
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) mime = 'audio/webm;codecs=opus';
+      else if (MediaRecorder.isTypeSupported('audio/webm')) mime = 'audio/webm';
+      else if (MediaRecorder.isTypeSupported('audio/mp4')) mime = 'audio/mp4';
+    } catch (e) {}
+    qlMedia = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    qlChunks = [];
+    qlMedia.ondataavailable = e => { if (e.data && e.data.size) qlChunks.push(e.data); };
+    qlMedia.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (qlMicTimer) { clearInterval(qlMicTimer); qlMicTimer = null; }
+      qlMicActive = false; qlMicUI(false);
+      const recType = (qlMedia && qlMedia.mimeType) || mime || 'audio/webm';
+      qlMedia = null;
+      const blob = new Blob(qlChunks, { type: recType });
+      qlChunks = [];
+      if (qlMicCancel) { qlSetStatus(''); return; }
+      if (blob.size < 1200) { qlSetStatus('Heard nothing — tap the mic and speak.', true); return; }
+      qlTranscribeTake(blob);
+    };
+    qlMedia.start(250);
+    qlMicActive = true; qlMicUI(true); qlMicT0 = Date.now();
+    qlMicTimer = setInterval(() => {
+      const s = Math.floor((Date.now() - qlMicT0) / 1000);
+      if (s >= 90) { qlEndTake(false); return; } // a take caps at 90 s
+      const mm = Math.floor(s / 60), ss = ('0' + (s % 60)).slice(-2);
+      qlSetStatus('Recording… ' + mm + ':' + ss + ' — tap the mic to stop.');
+    }, 500);
+    qlSetStatus('Recording… 0:00 — tap the mic to stop.');
+    haptic('tap');
+  }).catch(err => {
+    const n = err && err.name;
+    if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') qlSetStatus(qlMicPermMsg(), true);
+    else if (n === 'NotFoundError' || n === 'DevicesNotFoundError') qlSetStatus('No microphone found on this device.', true);
+    else qlSetStatus('Could not open the mic (' + (n || 'error') + ') — try again.', true);
+  });
+}
+async function qlTranscribeTake(blob) {
+  qlSetStatus('Transcribing…');
+  try {
+    const fd = new FormData();
+    const ext = (blob.type || '').indexOf('mp4') > -1 ? 'm4a' : 'webm';
+    fd.append('file', blob, 'take.' + ext);
+    fd.append('model', 'whisper-large-v3-turbo');
+    fd.append('language', 'en');
+    fd.append('temperature', '0');
+    fd.append('response_format', 'json');
+    const r = await aiFetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + getGroqKey() },
+      body: fd
+    }, 45000);
+    if (r.status === 401 || r.status === 403) { qlSetStatus('Groq key rejected — re-paste it in Settings.', true); return; }
+    if (r.status === 429) { qlSetStatus('Groq quota hit — wait a minute and try again.', true); return; }
+    if (r.status === 413) { qlSetStatus('That take was too long — keep each one under ~90 seconds.', true); return; }
+    let text = r.ok && r.data && typeof r.data.text === 'string' ? r.data.text.trim() : '';
+    if (!text) { qlSetStatus('Could not transcribe that — try again a bit closer to the mic.', true); return; }
+    // Whisper writes sentences; the parser wants a list
+    text = text.replace(/\.\s+(?=\d)/g, ', ').replace(/[.?!]+\s*$/, '');
+    qlMicErr = false;
+    qlMicCommit(text);
+    haptic('tap');
+  } catch (e) {
+    qlSetStatus(foodErrorToast(e), true);
+  }
+}
 
 async function submitQuickLog() {
   if (qlBusy) return;
