@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FORGE BUILD: V9.16 (daily reminders + steps & calories read from the WATCH ONLY, ignoring phone phantom steps; web-only, no rebuild) -->
+<!-- FORGE BUILD: V9.17 (motion & polish pass — dashboard entrance, counting numbers, staggered rings, tactile presses; web-only, no rebuild) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -101,7 +101,7 @@
 .db-ring-fill {
  fill: none; stroke-width: 7; stroke-linecap: round;
  stroke-dasharray: 201; stroke-dashoffset: 201;
- transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1);
+ transition: stroke-dashoffset 1.05s cubic-bezier(0.22,0.9,0.32,1);
 }
 .db-ring-cal { stroke: var(--accent); }
 .db-ring-pro { stroke: var(--sage); }
@@ -864,7 +864,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  min-height: calc(100vh - 130px);
  min-height: calc(100dvh - 130px);
  display: none;
- animation: fadeIn 0.3s ease;
+ animation: fadeIn 0.4s cubic-bezier(0.22,0.9,0.32,1);
  overflow-x: hidden;
 }
 #dashboard.section { padding-top: 16px; }
@@ -1950,7 +1950,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  position: fixed;
  bottom: calc(20px + env(safe-area-inset-bottom));
  left: 50%;
- transform: translateX(-50%) translateY(20px);
+ transform: translateX(-50%) translateY(16px) scale(0.96);
  background: var(--ink);
  color: var(--paper);
  padding: 12px 20px;
@@ -1958,12 +1958,12 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  font-size: 13px;
  z-index: 400;
  opacity: 0;
- transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+ transition: all 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
  pointer-events: none; letter-spacing: 0.02em;
 }
 .toast.show {
  opacity: 1;
- transform: translateX(-50%) translateY(0);
+ transform: translateX(-50%) translateY(0) scale(1);
 }
 
 /* ============= USER MENU ============= */
@@ -2291,6 +2291,43 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 .sugg-empty button { margin-top:12px; padding:10px 18px; border-radius:12px; border:none; background:var(--accent); color:#fff; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .sugg-spin { display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color: var(--accent); border-radius:50%; animation: spin 0.7s linear infinite; vertical-align:-2px; margin-right:7px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============= V9.17 MOTION & POLISH ============= */
+/* Signature moment: the dashboard wakes up — cards rise in sequence,
+   rings sweep one after another, numbers count up. Everything else stays quiet. */
+#dashboard.section.active { animation: none; }
+#dashboard.active > * { animation: forgeRise 0.5s cubic-bezier(0.22, 0.9, 0.32, 1) both; }
+#dashboard.active > *:nth-child(1) { animation-delay: 0.02s; }
+#dashboard.active > *:nth-child(2) { animation-delay: 0.07s; }
+#dashboard.active > *:nth-child(3) { animation-delay: 0.12s; }
+#dashboard.active > *:nth-child(4) { animation-delay: 0.17s; }
+#dashboard.active > *:nth-child(5) { animation-delay: 0.22s; }
+#dashboard.active > *:nth-child(6) { animation-delay: 0.27s; }
+#dashboard.active > *:nth-child(7) { animation-delay: 0.32s; }
+#dashboard.active > *:nth-child(n+8) { animation-delay: 0.36s; }
+@keyframes forgeRise {
+ from { opacity: 0; transform: translateY(12px); }
+ to { opacity: 1; transform: none; }
+}
+/* Rings sweep in sequence rather than all at once */
+.db-ring-cal { transition-delay: 0.05s; }
+.db-ring-pro { transition-delay: 0.16s; }
+.db-ring-work { transition-delay: 0.27s; }
+/* Tactile press on tappable surfaces (pairs with the haptics) */
+#dbStepsCard { transition: transform 0.15s ease, box-shadow 0.2s ease; }
+#dbStepsCard:active { transform: scale(0.985); }
+.check-item { transition: opacity 0.3s ease, transform 0.15s ease; }
+.check-item:active { transform: scale(0.99); }
+.check-box { transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.15s ease; }
+.check-item:active .check-box { transform: scale(0.88); }
+/* Numbers hold their width while counting */
+.db-ring-val, .db-remain-num, #dbStepsVal { font-variant-numeric: tabular-nums; }
+/* Keyboard quality floor */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+ #dashboard.active > * { animation: none; }
+ .db-ring-cal, .db-ring-pro, .db-ring-work { transition-delay: 0s; }
+}
 </style>
 </head>
 <body>
@@ -2427,28 +2464,6 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  </div>
  <div style="height:7px;border-radius:99px;background:rgba(0,0,0,0.08);overflow:hidden">
  <div id="dbStepsFill" style="height:100%;width:0%;border-radius:99px;background:var(--sage);transition:width .45s ease"></div>
- </div>
- </div>
-
- <!-- Calories burned (Health Connect) -->
- <div id="dbCaloriesCard" onclick="onCaloriesCardTap()" style="background:var(--paper-2);border:1px solid rgba(0,0,0,0.05);border-radius:18px;padding:15px 17px;margin-bottom:14px;cursor:pointer;-webkit-tap-highlight-color:transparent">
- <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
- <div style="display:flex;align-items:center;gap:11px">
- <div style="width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(196,99,63,0.14);color:var(--accent);flex:0 0 auto">
- <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c.7 3.1-1.6 4.6-2.9 6.3C8 10.3 7.4 11.9 7.4 13.6a4.6 4.6 0 1 0 9.2 0c0-1.4-.5-2.6-1.2-3.6-.5.8-1.3 1.2-2.1 1.1.1-2.9-.4-5.8-1.3-8.7Z"/></svg>
- </div>
- <div>
- <div style="font-size:13px;color:var(--ink);font-weight:600">Calories burned</div>
- <div style="font-size:11px;color:var(--ink);opacity:0.5" id="dbCaloriesMeta">Tap to sync from your watch</div>
- </div>
- </div>
- <div style="text-align:right">
- <div style="font-size:25px;font-weight:700;color:var(--ink);line-height:1.05" id="dbCaloriesVal">—</div>
- <div style="font-size:11px;color:var(--ink);opacity:0.5" id="dbCaloriesGoalLbl">/ 500</div>
- </div>
- </div>
- <div style="height:7px;border-radius:99px;background:rgba(0,0,0,0.08);overflow:hidden">
- <div id="dbCaloriesFill" style="height:100%;width:0%;border-radius:99px;background:var(--accent);transition:width .45s ease"></div>
  </div>
  </div>
 
@@ -3206,7 +3221,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="s-meta">Until next time</div>
  </button>
 
- <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.16</span></div>
+ <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.17</span></div>
 
  </div>
 </div>
@@ -3562,7 +3577,6 @@ let state = {
  weights: [],
  photos: [],
  steps: {},
- calories: {},
  checklist: {},
  meals: {},
  lastCheckDate: null,
@@ -3854,7 +3868,6 @@ function attachListeners(u) {
  state.streak = d.streak || 0;
  state.lastStreakDay = d.lastStreakDay || null;
  state.steps = d.steps || {};
- state.calories = d.calories || {};
  renderChecklist();
  renderMeals();
  renderHero();
@@ -5491,7 +5504,7 @@ async function logShake() {
  toast(`Protein shake logged — ${scoops * 25}g protein added`);
 }
 
-try{window.FORGE_BUILD='v9.16';console.log('%c[Forge] build v9.16 \u2014 native daily reminders active','color:#7bb86f;font-weight:700');}catch(e){}
+try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion & polish active','color:#7bb86f;font-weight:700');}catch(e){}
 /* ===== FORGE FOOD DB + ENGINE (injected; LLM parses, JS computes) ===== */
 /* ============================================================
    FORGE FOOD DATABASE  (FOOD_DB)
@@ -6383,7 +6396,6 @@ async function renderDashboard() {
 
  renderDashStats();
  renderSteps();
- renderCalories();
  renderRecentMeals();
  renderWorkoutHistory();
  maybeShowCoachPopup();
@@ -6406,16 +6418,16 @@ async function renderDailyDash() {
  setRing('ringWorkArc', workoutDays, 1);
 
  const el = (id, val) => { const e=$(id); if(e) e.textContent=val; };
- el('ringCalVal', cal);
- el('ringProVal', pro);
- el('ringWorkVal', workoutDays);
+ animateNumber('ringCalVal', cal);
+ animateNumber('ringProVal', pro);
+ animateNumber('ringWorkVal', workoutDays);
  el('ringCalSub', `of ${CALORIE_GOAL} goal`);
  el('ringProSub', `of ${PROTEIN_GOAL}g goal`);
  el('ringWorkSub', workoutDays ? 'Workout done ✓' : 'No workout');
 
  // Calories remaining
  const remaining = Math.max(0, CALORIE_GOAL - cal);
- el('dbRemainNum', remaining);
+ animateNumber('dbRemainNum', remaining);
  const usedPct = Math.min(100, Math.round(cal/CALORIE_GOAL*100));
  const fill = $('dbRemainFill');
  if (fill) fill.style.width = usedPct+'%';
@@ -6455,9 +6467,9 @@ async function renderPeriodDash(days) {
  setRing('ringWorkArc', workDays, days);
 
  const el = (id, val) => { const e=$(id); if(e) e.textContent=val; };
- el('ringCalVal', avgCal);
- el('ringProVal', avgPro);
- el('ringWorkVal', workDays);
+ animateNumber('ringCalVal', avgCal);
+ animateNumber('ringProVal', avgPro);
+ animateNumber('ringWorkVal', workDays);
  el('ringCalSub', 'avg kcal/day');
  el('ringProSub', 'avg protein/day');
  el('ringWorkSub', `of ${days} days`);
@@ -6519,7 +6531,6 @@ function getWorkoutDaysInRange(from, to) {
 
 // ============= STEPS (Health Connect via @capgo/capacitor-health) =============
 const STEPS_GOAL = 10000;
-const CALORIES_GOAL = 500;   // active calories/day target for the dashboard card
 let _stepsAutoSynced = false;
 
 function isNativeApp() {
@@ -6534,6 +6545,28 @@ function getStepsForDate(date) {
 }
 function fmtNum(n) {
   try { return Number(n).toLocaleString('en-IN'); } catch (e) { return String(n); }
+}
+// V9.17: numbers count up to their value instead of snapping (reduced-motion aware)
+function animateNumber(target, to, format) {
+  const e = (typeof target === 'string') ? $(target) : target;
+  if (!e) return;
+  const fmt = format || (v => v);
+  to = Number(to) || 0;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let from = (e._animFrom != null) ? Number(e._animFrom)
+           : (parseFloat(String(e.textContent).replace(/[^\d.-]/g, '')) || 0);
+  if (!isFinite(from)) from = 0;
+  e._animFrom = to;
+  if (reduce || from === to) { e.textContent = fmt(to); return; }
+  if (e._animRAF) cancelAnimationFrame(e._animRAF);
+  const t0 = performance.now(), dur = 650;
+  const tick = (t) => {
+    const pr = Math.min(1, (t - t0) / dur);
+    const eased = 1 - Math.pow(1 - pr, 3);
+    e.textContent = fmt(Math.round(from + (to - from) * eased));
+    e._animRAF = (pr < 1) ? requestAnimationFrame(tick) : 0;
+  };
+  e._animRAF = requestAnimationFrame(tick);
 }
 function renderSteps() {
   const card = $('dbStepsCard');
@@ -6560,7 +6593,7 @@ function renderSteps() {
 
   if (!isNativeApp()) meta = 'Syncs in the Forge app';
 
-  if (valEl) valEl.textContent = count > 0 ? fmtNum(count) : '—';
+  if (valEl) { if (count > 0) animateNumber(valEl, count, fmtNum); else { valEl.textContent = '—'; valEl._animFrom = 0; } }
   if (goalEl) goalEl.textContent = '/ ' + fmtNum(STEPS_GOAL);
   if (fillEl) fillEl.style.width = Math.min(100, Math.round((count / STEPS_GOAL) * 100)) + '%';
   if (metaEl) metaEl.textContent = meta;
@@ -6658,108 +6691,6 @@ function onStepsCardTap() {
   syncStepsFromHealthConnect();
 }
 window.onStepsCardTap = onStepsCardTap;
-
-// ===== Calories burned (active energy from the watch via Health Connect) =====
-// Mirrors the steps engine. 'calories' = ActiveCaloriesBurnedRecord in kcal,
-// with a fallback to 'totalCalories' if the source only writes the total.
-let _caloriesAutoSynced = false;
-
-function getCaloriesForDate(date) {
-  return (state.calories && state.calories[date]) ? state.calories[date] : 0;
-}
-
-function renderCalories() {
-  const card = $('dbCaloriesCard');
-  if (!card) return;
-  const valEl = $('dbCaloriesVal'), fillEl = $('dbCaloriesFill'), metaEl = $('dbCaloriesMeta'), goalEl = $('dbCaloriesGoalLbl');
-
-  let kcal = 0, meta = 'Tap to sync from your watch';
-  if (typeof dashPeriod !== 'undefined' && dashPeriod !== 'daily') {
-    const days = dashPeriod === 'weekly' ? 7 : 30;
-    let sum = 0, n = 0;
-    for (let i = 0; i < days; i++) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const c = getCaloriesForDate(iso);
-      if (c > 0) { sum += c; n++; }
-    }
-    kcal = n > 0 ? Math.round(sum / n) : 0;
-    meta = n > 0 ? `avg of ${n} day${n > 1 ? 's' : ''}` : 'No calorie data yet';
-  } else {
-    const d = (typeof dashDate !== 'undefined' && dashDate) ? dashDate : todayISO();
-    kcal = getCaloriesForDate(d);
-    meta = kcal > 0 ? `${fmtNum(kcal)} of ${fmtNum(CALORIES_GOAL)} kcal` : 'Tap to sync from your watch';
-  }
-
-  if (!isNativeApp()) meta = 'Syncs in the Forge app';
-
-  if (valEl) valEl.textContent = kcal > 0 ? fmtNum(kcal) : '—';
-  if (goalEl) goalEl.textContent = '/ ' + fmtNum(CALORIES_GOAL);
-  if (fillEl) fillEl.style.width = Math.min(100, Math.round((kcal / CALORIES_GOAL) * 100)) + '%';
-  if (metaEl) metaEl.textContent = meta;
-
-  if (isNativeApp() && !_caloriesAutoSynced) {
-    _caloriesAutoSynced = true;
-    syncCaloriesFromHealthConnect({ silent: true });
-  }
-}
-
-async function saveCalories(date, kcal) {
-  if (!state.calories) state.calories = {};
-  state.calories[date] = kcal;
-  renderCalories();
-  await saveMeta({ calories: state.calories });
-}
-
-async function syncCaloriesFromHealthConnect(opts) {
-  opts = opts || {};
-  if (!isNativeApp()) {
-    if (!opts.silent) toast('Calorie sync runs in the Forge app');
-    renderCalories();
-    return;
-  }
-  const Health = getHealthPlugin();
-  if (!Health) {
-    if (!opts.silent) toast('Health plugin not found');
-    return;
-  }
-  try {
-    // Silent auto-sync must not pop an unprompted permission dialog — only read
-    // if calorie access is already granted. The card tap is what asks for it.
-    if (opts.silent) {
-      if (typeof Health.checkAuthorization === 'function') {
-        const status = await Health.checkAuthorization({ read: ['calories', 'totalCalories'], write: [] });
-        const ok = status && Array.isArray(status.readAuthorized)
-          && (status.readAuthorized.includes('calories') || status.readAuthorized.includes('totalCalories'));
-        if (!ok) { renderCalories(); return; }
-      }
-    } else if (typeof Health.requestAuthorization === 'function') {
-      await Health.requestAuthorization({ read: ['calories', 'totalCalories'], write: [] });
-    }
-
-    // Active calories first (what the watch shows as "calories burned"); fall
-    // back to total calories if the source doesn't write active. Watch-only.
-    let total = await readWatchTotalToday(Health, 'calories');
-    if (!(total > 0)) {
-      try { total = await readWatchTotalToday(Health, 'totalCalories'); } catch (e) { /* keep 0 */ }
-    }
-    const kcal = Math.round(total);
-    await saveCalories(todayISO(), kcal);
-    if (!opts.silent) {
-      toast(kcal > 0 ? `${fmtNum(kcal)} kcal burned synced` : 'No calorie data found yet');
-      if (typeof haptic === 'function') haptic('light');
-    }
-  } catch (e) {
-    console.error('[calories] sync failed', e);
-    if (!opts.silent) toast('Could not read calories — open Health Connect and allow Active calories');
-  }
-}
-
-function onCaloriesCardTap() {
-  if (typeof haptic === 'function') haptic('light');
-  syncCaloriesFromHealthConnect();
-}
-window.onCaloriesCardTap = onCaloriesCardTap;
 window.syncStepsFromHealthConnect = syncStepsFromHealthConnect;
 
 function renderDashStats() {
