@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FORGE BUILD: V9.17 (motion & polish pass — dashboard entrance, counting numbers, staggered rings, tactile presses; web-only, no rebuild) -->
+<!-- FORGE BUILD: V9.20 (voice logging — tap-to-talk mic with live transcription + listening animation, incremental takes append with commas for log-while-cooking, spoken units (tablespoons/kg) in parser; camera removed; on V9.19 recipe mode + V9.18 engine v2; web-only, no rebuild) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2159,24 +2159,100 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  color: var(--ink); resize: none; max-height: 110px; line-height: 1.4;
 }
 .ql-input:focus { outline:none; border-color: var(--sage); }
-.ql-photo-btn, .ql-send {
+.ql-mic, .ql-send {
  flex-shrink:0; width: 42px; height: 42px; border-radius: 50%;
  border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
- transition: transform 0.15s, opacity 0.2s;
+ transition: transform 0.15s, opacity 0.2s, background 0.2s;
 }
-.ql-photo-btn { background: var(--paper-2); border:1px solid var(--line); }
-.ql-photo-btn svg { width: 20px; height: 20px; stroke: var(--ink-soft); fill:none; }
+.ql-mic { position: relative; background: var(--paper-2); border:1px solid var(--line); }
+.ql-mic svg { width: 20px; height: 20px; position: relative; z-index: 2; }
+.ql-mic .mic-idle rect { fill: var(--ink-soft); }
+.ql-mic .mic-idle path { stroke: var(--ink-soft); }
+.ql-mic .mic-stop { display: none; }
+.ql-mic .mic-stop rect { fill: #fff; }
+.ql-mic.listening { background: var(--rose); border-color: var(--rose); animation: qlMicPulse 1.4s ease-in-out infinite; }
+.ql-mic.listening .mic-idle { display: none; }
+.ql-mic.listening .mic-stop { display: block; }
+.ql-mic-ring {
+ position: absolute; inset: -1px; border-radius: 50%;
+ border: 2px solid var(--rose); opacity: 0; pointer-events: none; z-index: 1;
+}
+.ql-mic.listening .ql-mic-ring { animation: qlMicRing 1.8s ease-out infinite; }
+.ql-mic.listening .ql-mic-ring.r2 { animation-delay: 0.9s; }
+@keyframes qlMicPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes qlMicRing { 0% { transform: scale(0.9); opacity: 0.75; } 100% { transform: scale(2); opacity: 0; } }
 .ql-send { background: var(--sage); }
 .ql-send svg { width: 19px; height: 19px; fill: #fff; }
-.ql-send:active, .ql-photo-btn:active { transform: scale(0.9); }
+.ql-send:active, .ql-mic:active { transform: scale(0.9); }
 .ql-send:disabled { opacity: 0.5; }
-.ql-thumb-wrap { position: relative; margin-top: 12px; display:none; }
-.ql-thumb-wrap.show { display:block; }
-.ql-thumb { width: 100%; max-height: 160px; object-fit: cover; border-radius: 14px; border:1px solid var(--line); }
-.ql-thumb-x { position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:50%; background:rgba(26,24,22,0.7); color:#fff; border:none; cursor:pointer; font-size:14px; }
 .ql-status { font-size: 12.5px; color: var(--sage); margin-top: 12px; text-align:center; min-height: 16px; }
 .ql-status.err { color: var(--rose); }
 .ql-hint { font-size: 11px; color: var(--ink-mute); margin-top: 8px; text-align:center; }
+
+/* --- Quick Log AI review card (confirm before anything hits the log) --- */
+.ql-review { display:none; margin-top: 12px; }
+.ql-review.show { display:block; animation: qlrIn 0.22s ease; }
+@keyframes qlrIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+.qlr-head {
+ display:flex; justify-content:space-between; align-items:center;
+ font-size: 12px; font-weight: 600; color: var(--ink-soft);
+ text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
+}
+.qlr-src { font-size: 10.5px; font-weight: 500; text-transform:none; letter-spacing:0; color: var(--ink-mute); border:1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
+.qlr-item {
+ display:flex; align-items:center; gap: 10px;
+ border: 1px solid var(--line); background: var(--paper-2);
+ border-radius: 14px; padding: 10px 12px; margin-bottom: 8px;
+}
+.qlr-left { flex:1; min-width:0; cursor:pointer; }
+.qlr-name { font-size: 14px; font-weight: 600; color: var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qlr-meta { font-size: 11.5px; color: var(--ink-mute); margin-top: 2px; }
+.qlr-right { flex-shrink:0; text-align:right; }
+.qlr-cal { font-size: 13.5px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.qlr-mac { font-size: 10.5px; color: var(--ink-mute); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.qlr-x {
+ flex-shrink:0; width: 26px; height: 26px; border-radius: 50%;
+ border: 1px solid var(--line); background: transparent; color: var(--ink-mute);
+ font-size: 15px; line-height: 1; cursor: pointer;
+}
+.qlr-x:active { transform: scale(0.9); }
+.qlr-total { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); text-align:right; margin: 4px 2px 10px; font-variant-numeric: tabular-nums; }
+.qlr-actions { display:flex; gap: 8px; }
+.qlr-discard, .qlr-confirm {
+ flex:1; border-radius: 14px; padding: 12px 0; font-family: inherit;
+ font-size: 13.5px; font-weight: 600; cursor: pointer; transition: transform 0.15s;
+}
+.qlr-discard { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); }
+.qlr-confirm { background: var(--sage); border: 1px solid var(--sage); color: #fff; }
+.qlr-discard:active, .qlr-confirm:active { transform: scale(0.97); }
+.ql-mode {
+ display:block; width:100%; margin-top: 10px; padding: 8px 0;
+ background: transparent; border: 1px dashed var(--line); border-radius: 12px;
+ color: var(--ink-soft); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.ql-mode.on { border-style: solid; border-color: var(--sage); color: var(--sage); background: var(--paper-2); }
+.qlr-namein {
+ width:100%; box-sizing:border-box; margin: 2px 0 10px;
+ border: 1px solid var(--line); background: var(--paper-2); border-radius: 12px;
+ padding: 10px 12px; font-family: inherit; font-size: 13.5px; color: var(--ink);
+}
+.qlr-namein:focus { outline:none; border-color: var(--sage); }
+.qlr-fracs { display:flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.qlr-frac {
+ flex:1; min-width: 52px; padding: 8px 0; border-radius: 999px;
+ border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-soft);
+ font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.qlr-frac.active { background: var(--sage); border-color: var(--sage); color: #fff; }
+.qlr-weights { display:flex; gap: 8px; margin-bottom: 8px; }
+.qlr-weights input {
+ flex:1; min-width:0; border: 1px solid var(--line); background: var(--paper-2);
+ border-radius: 12px; padding: 10px 12px; font-family: inherit; font-size: 13.5px; color: var(--ink);
+}
+.qlr-weights input:focus { outline:none; border-color: var(--sage); }
+.qlr-share { font-size: 12.5px; font-weight: 600; color: var(--sage); text-align:center; min-height: 16px; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.qlr-save { display:flex; align-items:center; gap: 8px; font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; cursor:pointer; }
+.qlr-save input { accent-color: var(--sage); width: 16px; height: 16px; }
 
 /* --- Nutrition trend chart dialog (square, animated) --- */
 .nx-overlay {
@@ -3221,7 +3297,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="s-meta">Until next time</div>
  </button>
 
- <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.17</span></div>
+ <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.20</span></div>
 
  </div>
 </div>
@@ -3274,7 +3350,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 <div class="ql-sheet" id="qlSheet">
  <div class="ql-grab"></div>
  <div class="ql-head">
- <div class="ql-title">Quick Log<small>Snap or type — AI logs it to today</small></div>
+ <div class="ql-title">Quick Log<small>Speak or type — confirm, then it logs to today</small></div>
  <button class="ql-close" onclick="closeQuickLog()">✕</button>
  </div>
  <div class="ql-cat-chips" id="qlChips">
@@ -3285,14 +3361,13 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <button class="ql-chip" data-cat="bridge" onclick="qlSetCat('bridge')">Bridge</button>
  <button class="ql-chip" data-cat="dinner" onclick="qlSetCat('dinner')">Dinner</button>
  </div>
- <div class="ql-thumb-wrap" id="qlThumbWrap">
- <img class="ql-thumb" id="qlThumb" alt="meal photo" />
- <button class="ql-thumb-x" onclick="qlClearPhoto()">✕</button>
- </div>
+ <button class="ql-mode" id="qlModeBtn" onclick="qlToggleRecipe()">🍲 Cooked a dish? Log by ingredients</button>
+ <div class="ql-review" id="qlReview"></div>
  <div class="ql-input-row">
- <input type="file" id="qlPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="qlPhotoPicked(event)" />
- <button class="ql-photo-btn" onclick="document.getElementById('qlPhotoInput').click()" aria-label="Add photo">
- <svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M21 19V8a2 2 0 0 0-2-2h-3l-2-3H10L8 6H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+ <button class="ql-mic" id="qlMicBtn" onclick="qlToggleMic()" aria-label="Speak your food">
+ <span class="ql-mic-ring"></span><span class="ql-mic-ring r2"></span>
+ <svg class="mic-idle" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7" fill="none" stroke-width="1.8" stroke-linecap="round"/></svg>
+ <svg class="mic-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.5"/></svg>
  </button>
  <textarea class="ql-input" id="qlInput" rows="1" placeholder="e.g. 2 rotis, 100g paneer, 1 banana" onkeydown="qlKeydown(event)" oninput="qlResize(this)"></textarea>
  <button class="ql-send" id="qlSend" onclick="submitQuickLog()" aria-label="Log">
@@ -3300,7 +3375,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  </button>
  </div>
  <div class="ql-status" id="qlStatus"></div>
- <div class="ql-hint" id="qlHint">Photos use Gemini vision · text uses Groq</div>
+ <div class="ql-hint" id="qlHint">Tap 🎤 while cooking — each take adds on · send when done</div>
 </div>
 
 <!-- NUTRITION TREND DIALOG -->
@@ -3685,6 +3760,7 @@ async function initApp() {
  try {
  await initUserData(u);
  await loadUserFoods();
+ flushDirtyFoodLogs(); // push any meals logged while offline
  await migrateLocalIfNeeded(u);
  attachListeners(u);
  renderUserUI();
@@ -4934,11 +5010,18 @@ function toggleDarkMode() {
 
 // ============= AI CHAT =============
 const GEMINI_KEY_STORAGE = 'forge_gemini_key';
-const GEMINI_MODEL = 'gemini-2.0-flash';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+/* Model chains: Forge tries each name until one answers, then remembers the
+   winner (forge_ai_models_v1). Google/Groq retiring a model name can no
+   longer silently break food logging. */
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+const GEMINI_MODEL = GEMINI_MODELS[0]; // legacy alias
 const GROQ_KEY_STORAGE = 'forge_groq_key';
-const GROQ_MODEL = 'llama-3.1-8b-instant';
+const GROQ_MODEL = 'llama-3.1-8b-instant'; // Forge AI chat (prose — speed matters more than depth)
+const GROQ_FOOD_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']; // food parsing wants the smarter model first
+const GROQ_VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct'];
 const GROQ_API_BASE = 'https://api.groq.com/openai/v1/chat/completions';
+const WORKING_MODEL_LS = 'forge_ai_models_v1';
 
 function getGroqKey() { return localStorage.getItem(GROQ_KEY_STORAGE) || ''; }
 
@@ -5083,41 +5166,89 @@ function showChatSetup() {
  <div class="chat-setup-title">Set up Forge AI</div>
  <div class="chat-setup-desc">Add at least one key. Groq is recommended — 14,400 free requests/day. Gemini is the fallback.</div>
  <div style="font-size:11px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 6px">Groq (Primary · Free at console.groq.com)</div>
- <input class="chat-key-input" id="groqKeyInput" type="password" placeholder="Paste Groq key (gsk_…)" value="${groqVal}" />
+ <input class="chat-key-input" id="groqKeyInput" type="password" placeholder="Paste Groq key" value="${groqVal}" />
  <div style="font-size:11px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:0.06em;margin:12px 0 6px">Gemini (Fallback · Free at aistudio.google.com/apikey)</div>
- <input class="chat-key-input" id="geminiKeyInput" type="password" placeholder="Paste Gemini key (AIzaSy…)" value="${geminiVal}" />
+ <input class="chat-key-input" id="geminiKeyInput" type="password" placeholder="Paste Gemini key (AIza… or AQ.…)" value="${geminiVal}" />
  <button class="chat-save-btn" onclick="saveAIKeys()" style="margin-top:14px">Save Keys</button>
- <div class="chat-key-note">Keys are saved only on this device. Groq is used first; Gemini kicks in automatically if Groq quota is hit.</div>
+ <div class="chat-key-note">Any key format is accepted — Forge verifies it live with the provider when you save. Keys stay only on this device. Gemini handles food logging; Groq handles chat and is the food fallback.</div>
  </div>
  `;
 }
 
 function saveGeminiKey() { saveAIKeys(); }
 
-function saveAIKeys() {
- const groqInput = document.getElementById('groqKeyInput');
- const geminiInput = document.getElementById('geminiKeyInput');
- const groqKey = groqInput ? groqInput.value.trim() : '';
- const geminiKey = geminiInput ? geminiInput.value.trim() : '';
- if (!groqKey && !geminiKey) {
-   toast('Add at least one API key to continue');
-   return;
- }
- if (groqKey) {
-   if (!groqKey.startsWith('gsk_')) { toast('Groq key should start with gsk_…'); return; }
-   localStorage.setItem(GROQ_KEY_STORAGE, groqKey);
- }
- if (geminiKey) {
-   if (!geminiKey.startsWith('AIza')) { toast('Gemini key should start with AIzaSy…'); return; }
-   localStorage.setItem(GEMINI_KEY_STORAGE, geminiKey);
- }
- updateAiKeyMenuMeta();
- chatSetupMode = false;
- chatHistory = [];
- showChatMain();
- const label = groqKey ? 'Groq · Llama 3.1' : 'Gemini 2.0 Flash';
- updateChatProviderLabel(label);
- toast('Forge AI is ready ✦');
+/* Keys are saved AS-IS — no format rules. Google now issues keys starting
+   with "AIza…" AND "AQ.…" (and may change again); Groq may too. The only
+   real test of a key is asking the provider, so that's what Forge does. */
+function cleanKey(s) {
+  return String(s || '')
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '')   // zero-width chars & nbsp that ride along when copying
+    .replace(/^["'`\s]+|["'`\s]+$/g, '')           // stray quotes/whitespace around the paste
+    .replace(/\s+/g, '');                          // real keys never contain whitespace
+}
+
+async function verifyGroqKey(key) {
+  try {
+    const r = await aiFetch(GROQ_API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ model: GROQ_MODEL, messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 })
+    }, 12000);
+    if (r.ok) return { ok: true };
+    if (r.status === 401 || r.status === 403) return { ok: false, why: 'Groq rejected this key (' + r.status + ')' };
+    if (r.status === 429) return { ok: true, why: 'key valid, quota busy' };
+    return { ok: null, why: 'Groq answered ' + r.status + ' — saved anyway' };
+  } catch (e) { return { ok: null, why: 'could not reach Groq — saved anyway' }; }
+}
+
+async function verifyGeminiKey() {
+  try {
+    await geminiGenerate({ user: 'ping', maxTokens: 200, temperature: 0 });
+    return { ok: true };
+  } catch (e) {
+    if (e && e.code === 'KEY_INVALID') return { ok: false, why: 'Google rejected this key' };
+    if (e && e.code === 'QUOTA') return { ok: true, why: 'key valid, quota busy' };
+    return { ok: null, why: 'could not verify — saved anyway' };
+  }
+}
+
+async function saveAIKeys() {
+  const groqInput = document.getElementById('groqKeyInput');
+  const geminiInput = document.getElementById('geminiKeyInput');
+  const groqKey = cleanKey(groqInput ? groqInput.value : '');
+  const geminiKey = cleanKey(geminiInput ? geminiInput.value : '');
+  if (!groqKey && !geminiKey) {
+    toast('Add at least one API key to continue');
+    return;
+  }
+  // Save first (universal — any format accepted), then verify live and report.
+  if (groqKey) localStorage.setItem(GROQ_KEY_STORAGE, groqKey); else localStorage.removeItem(GROQ_KEY_STORAGE);
+  if (geminiKey) localStorage.setItem(GEMINI_KEY_STORAGE, geminiKey); else localStorage.removeItem(GEMINI_KEY_STORAGE);
+  updateAiKeyMenuMeta();
+
+  const btn = document.querySelector('.chat-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking keys with providers…'; }
+  let checks = [null, null];
+  try {
+    checks = await Promise.all([
+      groqKey ? verifyGroqKey(groqKey) : Promise.resolve(null),
+      geminiKey ? verifyGeminiKey() : Promise.resolve(null)
+    ]);
+  } catch (e) { /* verification must never block saving */ }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save Keys'; }
+
+  const parts = [];
+  if (checks[0]) parts.push(checks[0].ok === true ? 'Groq ✓' : (checks[0].ok === false ? 'Groq ✗ ' + checks[0].why : 'Groq: ' + checks[0].why));
+  if (checks[1]) parts.push(checks[1].ok === true ? 'Gemini ✓' : (checks[1].ok === false ? 'Gemini ✗ ' + checks[1].why : 'Gemini: ' + checks[1].why));
+  toast(parts.join(' · ') || 'Keys saved');
+
+  const anyUsable = checks.some(c => c && c.ok !== false);
+  if (!anyUsable) return; // both keys were rejected — stay on setup so they can re-paste
+
+  chatSetupMode = false;
+  chatHistory = [];
+  showChatMain();
+  updateChatProviderLabel(groqKey ? 'Groq · Llama 3.1' : 'Gemini');
 }
 
 function openChatKeySettings() {
@@ -5370,38 +5501,83 @@ function emptyLog() {
  return { preworkout: [], breakfast: [], lunch: [], snack: [], bridge: [], dinner: [] };
 }
 
+/* ---------- Offline-safe persistence ----------
+   Every change is written to THIS DEVICE first (localStorage), then synced
+   to Firestore. If the network is down, the day is marked dirty and pushed
+   automatically when the connection returns — a logged meal can never vanish. */
+const FOODLOG_LS_PREFIX = 'forge_foodlog_';
+const FOODLOG_DIRTY_LS = 'forge_foodlog_dirty';
+
+function readLocalFoodLog(date) {
+  try { const raw = localStorage.getItem(FOODLOG_LS_PREFIX + date); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function writeLocalFoodLog(date, log, updatedAt) {
+  try { localStorage.setItem(FOODLOG_LS_PREFIX + date, JSON.stringify({ log: log, updatedAt: updatedAt || new Date().toISOString() })); } catch (e) {}
+}
+function getDirtyFoodDates() {
+  try { return JSON.parse(localStorage.getItem(FOODLOG_DIRTY_LS) || '[]'); } catch (e) { return []; }
+}
+function markFoodDirty(date, on) {
+  try {
+    let d = getDirtyFoodDates();
+    if (on && d.indexOf(date) === -1) d.push(date);
+    if (!on) d = d.filter(x => x !== date);
+    localStorage.setItem(FOODLOG_DIRTY_LS, JSON.stringify(d));
+  } catch (e) {}
+}
+
 async function loadFoodLogFromCloud(date) {
- if (!user) { foodLogCache[date] = emptyLog(); return; }
- const fb = window.__fb;
- try {
- const ref = fb.doc(fb.db, 'users', user.uid, 'foodlogs', date);
- const snap = await fb.getDoc(ref);
- if (snap.exists()) {
- const stored = snap.data().log || {};
- // merge with emptyLog so new categories always exist
- foodLogCache[date] = Object.assign(emptyLog(), stored);
- } else {
- foodLogCache[date] = emptyLog();
- }
- } catch(e) {
- console.error('loadFoodLog error', e);
- foodLogCache[date] = emptyLog();
- }
+  const local = readLocalFoodLog(date);
+  if (!user) { foodLogCache[date] = Object.assign(emptyLog(), local ? (local.log || {}) : {}); return; }
+  const fb = window.__fb;
+  try {
+    const ref = fb.doc(fb.db, 'users', user.uid, 'foodlogs', date);
+    const snap = await fb.getDoc(ref);
+    const cloud = snap.exists() ? snap.data() : null;
+    // newest copy wins: an unsynced offline log on this device beats older cloud data
+    if (local && (!cloud || String(local.updatedAt || '') > String(cloud.updatedAt || ''))) {
+      foodLogCache[date] = Object.assign(emptyLog(), local.log || {});
+      if (getDirtyFoodDates().indexOf(date) > -1) saveFoodLogToCloud(date); // push it up in the background
+    } else {
+      foodLogCache[date] = Object.assign(emptyLog(), cloud ? (cloud.log || {}) : {});
+      writeLocalFoodLog(date, foodLogCache[date], cloud ? cloud.updatedAt : undefined);
+    }
+  } catch (e) {
+    console.error('loadFoodLog error', e);
+    foodLogCache[date] = Object.assign(emptyLog(), local ? (local.log || {}) : {});
+  }
 }
 
 async function saveFoodLogToCloud(date) {
- if (!user) return;
- const fb = window.__fb;
- setSyncStatus('syncing');
- try {
- const ref = fb.doc(fb.db, 'users', user.uid, 'foodlogs', date);
- await fb.setDoc(ref, { log: foodLogCache[date], updatedAt: new Date().toISOString() });
- setSyncStatus('synced');
- } catch(e) {
- console.error('saveFoodLog error', e);
- setSyncStatus('offline');
- }
+  const updatedAt = new Date().toISOString();
+  writeLocalFoodLog(date, foodLogCache[date], updatedAt); // device copy first — never lose a log
+  markFoodDirty(date, true);
+  if (!user) return;
+  const fb = window.__fb;
+  setSyncStatus('syncing');
+  try {
+    const ref = fb.doc(fb.db, 'users', user.uid, 'foodlogs', date);
+    await fb.setDoc(ref, { log: foodLogCache[date], updatedAt: updatedAt });
+    markFoodDirty(date, false);
+    setSyncStatus('synced');
+  } catch (e) {
+    console.error('saveFoodLog error', e);
+    setSyncStatus('offline'); // stays dirty; flushed when the connection returns
+  }
 }
+
+async function flushDirtyFoodLogs() {
+  if (!user) return;
+  const dirty = getDirtyFoodDates();
+  for (const d of dirty) {
+    if (!foodLogCache[d]) {
+      const local = readLocalFoodLog(d);
+      if (local) foodLogCache[d] = Object.assign(emptyLog(), local.log || {});
+    }
+    if (foodLogCache[d]) await saveFoodLogToCloud(d);
+  }
+}
+window.addEventListener('online', function () { flushDirtyFoodLogs(); });
 
 async function renderFoodLog() {
  updateFoodDateUI();
@@ -5446,12 +5622,12 @@ function renderFoodItems() {
  return;
  }
  list.innerHTML = items.map((item, idx) => {
- const src = item.source === 'estimate' ? 'AI estimate' : (item.source === 'personal' ? 'your food' : 'database');
+ const src = item.source === 'estimate' ? 'AI estimate' : (item.source === 'personal' ? 'your food' : (item.source === 'recipe' ? 'your recipe' : 'database'));
  return `
  <div class="fl-item">
  <div class="fl-item-left" style="cursor:pointer" onclick="openFoodFix('${foodCat}', ${idx})" title="Tap to adjust portion">
- <div class="fl-item-name">${item.name}</div>
- <div class="fl-item-meta">${item.quantity || ''}<span style="opacity:0.45;font-size:9px;letter-spacing:0.4px;text-transform:uppercase;margin-left:7px">${src}</span></div>
+ <div class="fl-item-name">${escapeHTML(item.name)}</div>
+ <div class="fl-item-meta">${escapeHTML(item.quantity || '')}<span style="opacity:0.45;font-size:9px;letter-spacing:0.4px;text-transform:uppercase;margin-left:7px">${src}</span></div>
  </div>
  <div class="fl-item-right">
  <div class="fl-item-cal">${Math.round(item.calories)} kcal</div>
@@ -5504,7 +5680,7 @@ async function logShake() {
  toast(`Protein shake logged — ${scoops * 25}g protein added`);
 }
 
-try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion & polish active','color:#7bb86f;font-weight:700');}catch(e){}
+try{window.FORGE_BUILD='v9.20';console.log('%c[Forge] build v9.20 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');}catch(e){}
 /* ===== FORGE FOOD DB + ENGINE (injected; LLM parses, JS computes) ===== */
 /* ============================================================
    FORGE FOOD DATABASE  (FOOD_DB)
@@ -5930,6 +6106,38 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
   F('coconut_milk','Coconut Milk','dinner',[200,2,3,21],[['1 katori',100]],100,'coconut milk,nariyal doodh');
   F('salad_dressed','Salad (with dressing)','lunch',[120,2,8,9],[['1 katori',100]],100,'salad with dressing,caesar salad,dressed salad');
 
+  /* ---- RAW COOKING INGREDIENTS (recipe mode) ----
+     Uncooked/per-pantry values (IFCT-aligned). Normal logging keeps matching
+     cooked dishes; these win only in recipe mode or when "raw/dry" is said. */
+  F('ing_rice_raw','Rice (raw)','ingredient',[356,7.5,78,0.5],[['1 katori',180],['1 cup',200],['1 tbsp',12]],50,'rice,raw rice,uncooked rice,dry rice,kacha chawal,basmati rice raw');
+  F('ing_dal_raw','Dal (raw, any split)','ingredient',[347,23,60,1.3],[['1 katori',180],['1 tbsp',12]],50,'dal,raw dal,dry dal,uncooked dal');
+  F('ing_moong_dal_raw','Moong Dal (raw)','ingredient',[348,24,59,1.2],[['1 katori',180],['1 tbsp',12]],50,'moong dal,raw moong dal,moong dhuli,yellow moong raw,mag ni dal');
+  F('ing_toor_dal_raw','Toor Dal (raw)','ingredient',[343,22,62,1.5],[['1 katori',180],['1 tbsp',12]],50,'toor dal,tuvar dal,arhar dal raw,tuver dal');
+  F('ing_masoor_dal_raw','Masoor Dal (raw)','ingredient',[352,25,59,1.1],[['1 katori',180],['1 tbsp',12]],50,'masoor dal,red lentils raw,masur dal raw');
+  F('ing_chana_dal_raw','Chana Dal (raw)','ingredient',[360,21,60,5],[['1 katori',180],['1 tbsp',12]],50,'chana dal,split chickpeas raw');
+  F('ing_urad_dal_raw','Urad Dal (raw)','ingredient',[341,25,59,1.4],[['1 katori',180],['1 tbsp',12]],50,'urad dal,black gram dal raw,adad ni dal');
+  F('ing_rajma_raw','Rajma (raw)','ingredient',[333,23,60,1.1],[['1 katori',180]],50,'rajma,kidney beans raw,rajma raw');
+  F('ing_chole_raw','Kabuli Chana (raw)','ingredient',[364,19,61,6],[['1 katori',180]],50,'kabuli chana,chole raw,chickpeas raw,chana raw');
+  F('ing_atta','Wheat Atta','ingredient',[341,12,71,1.7],[['1 katori',120],['1 cup',130],['1 tbsp',9]],50,'atta,wheat flour,whole wheat flour,gehu ka atta,lot');
+  F('ing_maida','Maida','ingredient',[348,10,74,1],[['1 katori',120],['1 cup',130],['1 tbsp',9]],50,'maida,refined flour,all purpose flour');
+  F('ing_besan','Besan','ingredient',[387,22,58,7],[['1 katori',110],['1 tbsp',9]],50,'besan,gram flour,chickpea flour,chana flour');
+  F('ing_suji','Suji / Rava','ingredient',[360,12,73,1],[['1 katori',160],['1 tbsp',10]],50,'suji,sooji,rava,semolina');
+  F('ing_poha_dry','Poha (dry)','ingredient',[346,7,77,1.2],[['1 katori',60],['1 cup',80]],50,'dry poha,poha raw,beaten rice dry,flattened rice');
+  F('ing_sabudana_dry','Sabudana (dry)','ingredient',[351,0.2,87,0.2],[['1 katori',160]],50,'sabudana dry,sago raw,sabudana raw');
+  F('ing_oil','Cooking Oil','ingredient',[884,0,0,100],[['1 tsp',5],['1 tbsp',14]],10,'oil,cooking oil,refined oil,sunflower oil,groundnut oil,mustard oil,olive oil,tel');
+  F('ing_butter','Butter','ingredient',[717,0.9,0.1,81],[['1 tsp',5],['1 tbsp',14],['1 cube',10]],10,'butter,amul butter,makhan');
+  F('ing_sugar','Sugar','ingredient',[387,0,100,0],[['1 tsp',4],['1 tbsp',12]],10,'sugar,white sugar,cheeni,khand,sakar');
+  F('ing_jaggery','Jaggery','ingredient',[383,0.4,98,0.1],[['1 tsp',7],['1 tbsp',20],['1 piece',15]],15,'jaggery,gud,gor,gol');
+  F('ing_onion','Onion (raw)','ingredient',[40,1.1,9,0.1],[['1 small',50],['1 medium',80],['1 large',120]],80,'onion,raw onion,pyaaz,kanda,dungri');
+  F('ing_tomato','Tomato (raw)','ingredient',[18,0.9,3.9,0.2],[['1 small',60],['1 medium',90],['1 large',130]],90,'tomato,raw tomato,tamatar');
+  F('ing_capsicum','Capsicum (raw)','ingredient',[26,1,6,0.2],[['1 small',80],['1 medium',120]],100,'capsicum,bell pepper,shimla mirch,green capsicum');
+  F('ing_potato_raw','Potato (raw)','ingredient',[77,2,17,0.1],[['1 small',80],['1 medium',120],['1 large',180]],120,'raw potato,potato raw,kacha aloo,bataka');
+  F('ing_peas','Green Peas (raw)','ingredient',[81,5.4,14,0.4],[['1 katori',130]],100,'green peas,peas,matar,vatana');
+  F('ing_lauki','Lauki (raw)','ingredient',[15,0.6,3.4,0.1],[['1 katori',150]],150,'lauki,bottle gourd,doodhi,ghiya,dudhi');
+  F('ing_bhindi_raw','Bhindi (raw)','ingredient',[33,1.9,7,0.2],[['1 katori',100]],100,'bhindi raw,okra raw,ladyfinger raw');
+  F('ing_cauliflower','Cauliflower (raw)','ingredient',[25,1.9,5,0.3],[['1 katori',100]],100,'cauliflower,gobi,phool gobi,flower');
+  F('ing_curd_cooking','Curd (for cooking)','ingredient',[60,3.1,4.7,3.3],[['1 katori',150],['1 tbsp',15]],100,'curd for kadhi,dahi for cooking');
+
   root.FOOD_DB = DB;
   root.__FOODDB_F = F; // exposed so later chunks can keep appending in build/testing
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -5975,11 +6183,12 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
   // index: exact alias -> entry ; token -> Set(entry) ; df for IDF weighting
   let EXACT = new Map();
   let TOKEN = new Map();
-  let ALL = [];
+  let ALL = []; let RECIPE_EXACT = new Map();
+  const RAW_HINT = /\b(raw|uncooked|dry|kacha|kachi|kacho)\b/;
   let DF = new Map();
   let NDOCS = 0;
   function rebuildIndex() {
-    EXACT = new Map(); TOKEN = new Map(); DF = new Map();
+    EXACT = new Map(); TOKEN = new Map(); DF = new Map(); RECIPE_EXACT = new Map();
     ALL = USER_FOODS.concat(DB);           // user foods first (priority on ties)
     ALL.forEach(e => {
       const names = [e.name, ...(e.aliases || [])];
@@ -5988,6 +6197,7 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
       names.forEach(n => tokens(n).forEach(t => tset.add(t)));
       e._tokens = tset;
       tset.forEach(t => { if (!TOKEN.has(t)) TOKEN.set(t, new Set()); TOKEN.get(t).add(e); });
+      if (e.cat === 'ingredient') names.forEach(n => { const k = norm(n); if (k && !RECIPE_EXACT.has(k)) RECIPE_EXACT.set(k, e); });
     });
     NDOCS = ALL.length;
     ALL.forEach(e => e._tokens.forEach(t => DF.set(t, (DF.get(t) || 0) + 1)));
@@ -5999,10 +6209,12 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
 
   /* Best DB match for a single food name string.
      Returns { entry, score } or null. score in [0,1]; >=CONF is a confident match. */
-  function matchFood(name) {
+  function matchFood(name, opts) {
+    const recipe = !!(opts && opts.recipe);
     const q = norm(name);
     if (!q) return null;
-    if (EXACT.has(q)) return { entry: EXACT.get(q), score: 1 };
+    if (recipe && RECIPE_EXACT.has(q)) return { entry: RECIPE_EXACT.get(q), score: 1 };
+    if (EXACT.has(q)) return { entry: EXACT.get(q), score: 1 }; // exact text always wins
 
     const qt = tokens(name);
     if (!qt.length) return null;
@@ -6022,6 +6234,9 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
       let score = 0.82 * cover + 0.18 * precision;
       const en = norm(e.name);
       if (en.length > 3 && (q.includes(en) || en.includes(q))) score += 0.12; // whole-name containment
+      // recipe mode: raw ingredients win; normal mode: they stay out of the way
+      if (e.cat === 'ingredient') { if (recipe) score += 0.2; else if (!RAW_HINT.test(q)) score -= 0.35; }
+      else if (recipe) score -= 0.08; // cooked dishes are rarely what went INTO the pot
       if (score > bestScore) { bestScore = score; best = e; }
     });
     if (!best) return null;
@@ -6083,13 +6298,13 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
   }
 
   /* MAIN: turn parsed items into committed food-log items */
-  function resolveItems(parsed) {
+  function resolveItems(parsed, opts) {
     if (!Array.isArray(parsed)) return [];
     return parsed.map(item => {
       const rawName = String(item.name || item.q || 'food').trim();
       let e = null;
       if (item.match) { const direct = getEntry(item.match); if (direct) e = direct; } // localParse passes a resolved id
-      if (!e) { const m = matchFood(rawName); if (m && m.score >= CONF) e = m.entry; }
+      if (!e) { const m = matchFood(rawName, opts); if (m && m.score >= CONF) e = m.entry; }
 
       if (e) {
         const grams = resolveGrams(e, item);
@@ -6142,18 +6357,18 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
       '  "count": the number of countable units if stated (2 rotis -> 2, a katori -> 1), else omit,',
       '  "unit": the unit word if stated ("roti","katori","glass","cup","piece","slice","bowl","tbsp","tsp","scoop"), else omit,',
       '  "grams": your best estimate of the TOTAL grams eaten of that item (a number).',
-      '  "per100": ONLY for an unusual food unlikely to be in an Indian food database, give a rough per-100g estimate {"kcal":,"p":,"c":,"f":}. For common Indian/everyday foods, OMIT this entirely.',
+      '  "per100": your rough per-100g nutrition estimate {"kcal":,"p":,"c":,"f":} for this food AS PREPARED. Include it for EVERY item — it is only used when the food is missing from the local database, otherwise the database wins.',
       '',
       'Rules: one object per distinct food. Combine duplicates. Be realistic with grams (1 roti ~35g, 1 katori dal/sabzi ~150g, 1 katori rice ~150g, 1 glass milk ~250g, 10 almonds ~12g, 1 samosa ~50g).',
-      'Return ONLY a JSON array. No prose, no markdown, no code fences.'
+      'Return ONLY a JSON object of this exact shape: {"items":[{...},{...}]} — no prose, no markdown, no code fences.'
     ].join('\n');
   }
   function buildParseUserText(text) {
-    return 'The person ate: "' + text + '". Return only the JSON array.';
+    return 'The person ate: "' + text + '". Return only the JSON object {"items":[...]}.';
   }
   function buildParseUserPhoto(note) {
     return (note ? ('Note: "' + note + '". ') : '')
-      + 'Identify every food/drink visible. Estimate the grams of each from the plate. Return only the JSON array.';
+      + 'Identify every food/drink visible. Estimate the grams of each from the plate. Return only the JSON object {"items":[...]}.';
   }
 
   function getEntry(id) { return ALL.find(e => e.id === id) || null; }
@@ -6166,14 +6381,16 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
 
   /* ---------- LOCAL parser: resolve clean typed logs with NO AI call ---------- */
   const NUMWORDS = { a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10, half:0.5, couple:2, dozen:12 };
-  const UNIT_WORDS = ['katori','katoris','bowl','bowls','glass','glasses','cup','cups','plate','plates','piece','pieces','pcs','slice','slices','roti','rotis','scoop','scoops','tbsp','tablespoon','tsp','teaspoon','spoon','spoons','bottle','bottles','can','cans','bar','bars','packet','packets','pack'];
-  const UNIT_CANON = { katoris:'katori', bowls:'bowl', glasses:'glass', cups:'cup', plates:'plate', pieces:'piece', pcs:'piece', slices:'slice', rotis:'roti', scoops:'scoop', tablespoon:'tbsp', teaspoon:'tsp', spoons:'spoon', bottles:'bottle', cans:'can', bars:'bar', packets:'packet', pack:'packet' };
+  const UNIT_WORDS = ['katori','katoris','bowl','bowls','glass','glasses','cup','cups','plate','plates','piece','pieces','pcs','slice','slices','roti','rotis','scoop','scoops','tbsp','tablespoon','tablespoons','tsp','teaspoon','teaspoons','spoon','spoons','bottle','bottles','can','cans','bar','bars','packet','packets','pack'];
+  const UNIT_CANON = { katoris:'katori', bowls:'bowl', glasses:'glass', cups:'cup', plates:'plate', pieces:'piece', pcs:'piece', slices:'slice', rotis:'roti', scoops:'scoop', tablespoon:'tbsp', tablespoons:'tbsp', teaspoon:'tsp', teaspoons:'tsp', spoons:'spoon', bottles:'bottle', cans:'can', bars:'bar', packets:'packet', pack:'packet' };
   const NUMWORD_RE = /\b(one|two|three|four|five|six|seven|eight|nine|ten|half|couple|dozen)\b/;
 
   function parseChunk(ch) {
     let s = norm(ch);
     if (!s) return null;
     let grams = null, count = null, unit = null;
+    const kgm = s.match(/(\d+(?:\.\d+)?|half)\s*(?:kg|kilo|kilogram|kilograms)\b/);
+    if (kgm) { grams = (kgm[1] === 'half' ? 0.5 : parseFloat(kgm[1])) * 1000; s = (s.slice(0, kgm.index) + ' ' + s.slice(kgm.index + kgm[0].length)).replace(/\s+/g, ' ').trim(); }
     const gm = s.match(/(\d+(?:\.\d+)?)\s*(?:g|gm|gms|gram|grams)\b/);
     if (gm) { grams = parseFloat(gm[1]); s = (s.slice(0, gm.index) + ' ' + s.slice(gm.index + gm[0].length)).replace(/\s+/g, ' ').trim(); }
     const cm = s.match(/^(\d+(?:\.\d+)?|a|an|one|two|three|four|five|six|seven|eight|nine|ten|half|couple|dozen)\b\s*/);
@@ -6192,12 +6409,17 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
 
   // Returns parsed items ONLY if every food is a confident DB hit and the text is clean.
   // Anything compound / conversational / unknown returns null -> caller uses the AI parser.
-  function localParse(text) {
+  function localParse(text, opts) {
+    const recipe = !!(opts && opts.recipe);
     if (!text) return null;
     const rawIn = String(text).trim();
-    if (!rawIn || rawIn.length > 120 || /[?]/.test(rawIn)) return null;
-    const chunks = rawIn.split(/\s*(?:,|\/|\+|&|;|\band\b|\bwith\b|\bplus\b|\n)\s*/i).map(c => c.trim()).filter(Boolean);
-    if (!chunks.length || chunks.length > 8) return null;
+    if (!rawIn || rawIn.length > (recipe ? 240 : 120) || /[?]/.test(rawIn)) return null;
+    let chunks = rawIn.split(/\s*(?:,|\/|\+|&|;|\band\b|\bwith\b|\bplus\b|\n)\s*/i).map(c => c.trim()).filter(Boolean);
+    if (recipe) {
+      // also split run-on lists: "30 gms onion 40 gms capsicum" -> two chunks
+      chunks = chunks.flatMap(c => c.split(/(?=\b\d+(?:\.\d+)?\s*(?:g|gm|gms|gram|grams|kg|kilo|kilograms?|ml|tbsp|tablespoons?|tsp|teaspoons?)\b)/i)).map(c => c.trim()).filter(Boolean);
+    }
+    if (!chunks.length || chunks.length > (recipe ? 14 : 8)) return null;
     const out = [];
     for (const ch of chunks) {
       const item = parseChunk(ch);
@@ -6207,8 +6429,8 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
       if (/\d/.test(nm) || NUMWORD_RE.test(' ' + nm + ' ')) return null;
       const nt = tokens(item.name);
       if (!nt.length) return null;
-      const m = matchFood(item.name);
-      if (!m || m.score < 0.7) return null;                 // unknown / unsure -> AI
+      const m = matchFood(item.name, { recipe });
+      if (!m || m.score < (recipe ? 0.66 : 0.7)) return null; // unknown / unsure -> AI
       const stray = nt.filter(t => !m.entry._tokens.has(t));
       if (stray.length && m.score < 0.95) return null;      // stray sentence words -> AI
       if (item.count == null && item.grams == null && (/\d/.test(ch) || NUMWORD_RE.test(' ' + norm(ch) + ' '))) return null;
@@ -6218,9 +6440,34 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
     return out.length ? out : null;
   }
 
+  /* ---------- RECIPE PARSE PROMPTS (raw ingredients of a home-cooked dish) ---------- */
+  function buildRecipePrompt() {
+    return [
+      'You parse the RAW INGREDIENT LIST of a home-cooked dish. You are a PARSER, not a calculator.',
+      'Every item the person lists is an UNCOOKED ingredient that went into the pot (flour, raw rice, raw dal, vegetables, oil, ghee, spices).',
+      '',
+      'For each ingredient output an object:',
+      '  "q": the phrase as said (e.g. "2 tbsp ghee", "50 gms rice"),',
+      '  "name": clean canonical ingredient name in its RAW form (e.g. "raw rice", "moong dal", "onion", "ghee", "atta"). Translate Hindi/Gujarati (chawal->rice, pyaaz/kanda->onion, tel->oil).',
+      '  "count": leading number if a countable unit is used, else omit,',
+      '  "unit": the unit word if stated ("tbsp","tsp","katori","cup","piece"), else omit,',
+      '  "grams": weight in grams if stated or confidently known, else omit,',
+      '  "per100": {"kcal","p","c","f"} for the RAW/UNCOOKED form of this exact ingredient, per 100 g. REQUIRED for every item (only used when the ingredient is missing from the local database, otherwise the database wins).',
+      '',
+      'Rules:',
+      '- NEVER merge ingredients into one dish entry. One object per ingredient.',
+      '- NEVER use cooked-food values: raw rice is ~356 kcal/100g (cooked is ~130) - always the raw number.',
+      '- Ignore water. Tiny spice quantities (haldi, jeera, salt, chilli) may be skipped.',
+      '- Return ONLY a JSON object of this exact shape: {"items":[{...},{...}]}'
+    ].join('\n');
+  }
+  function buildRecipeUserText(text) {
+    return 'Raw ingredients that went into my dish: """' + text + '""" Return the JSON object now.';
+  }
+
   const api = {
     matchFood, resolveItems, resolveGrams, fromPer100, clampMacros,
-    buildParsePrompt, buildParseUserText, buildParseUserPhoto,
+    buildParsePrompt, buildParseUserText, buildParseUserPhoto, buildRecipePrompt, buildRecipeUserText,
     setUserFoods, getUserFoods, getEntry, upsertUserFood, localParse, norm, tokens, _all: () => ALL
   };
   root.FoodEngine = api;
@@ -6230,65 +6477,32 @@ try{window.FORGE_BUILD='v9.17';console.log('%c[Forge] build v9.17 \u2014 motion 
 /* ===== end injected ===== */
 
 function extractJSON(text) {
- // Try direct parse first
- try { return JSON.parse(text); } catch(e) {}
- // Strip markdown fences
- const stripped = text.replace(/```json|```/gi, '').trim();
- try { return JSON.parse(stripped); } catch(e) {}
- // Find first [ ... ] block
- const match = stripped.match(/\[.*\]/s);
- if (match) { try { return JSON.parse(match[0]); } catch(e) {} }
- // Find first { ... } and wrap in array
- const objMatch = stripped.match(/\{.*\}/s);
- if (objMatch) { try { return [JSON.parse(objMatch[0])]; } catch(e) {} }
+ const tryParse = s => { try { return JSON.parse(s); } catch (e) { return undefined; } };
+ const unwrap = v => {
+   if (v == null) return null;
+   if (Array.isArray(v)) return v;
+   if (typeof v === 'object') {
+     const keys = ['items', 'foods', 'meal', 'result', 'data'];
+     for (const k of keys) if (Array.isArray(v[k])) return v[k];
+     if (v.name) return [v]; // single item object
+   }
+   return null;
+ };
+ let out = unwrap(tryParse(text));
+ if (out) return out;
+ const stripped = String(text || '').replace(/```json|```/gi, '').trim();
+ out = unwrap(tryParse(stripped));
+ if (out) return out;
+ let m = stripped.match(/\{[\s\S]*\}/);          // outermost object (JSON-mode shape)
+ if (m) { out = unwrap(tryParse(m[0])); if (out) return out; }
+ m = stripped.match(/\[[\s\S]*\]/);              // bare array fallback
+ if (m) { out = unwrap(tryParse(m[0])); if (out) return out; }
  return null;
 }
 
-async function logFood() {
- const input = $('flInput');
- const btn = $('flLogBtn');
- const text = input ? input.value.trim() : '';
- if (!text) return;
-
- // food logging tries the local DB first; AI (with key) only kicks in for novel/complex entries
-
- btn.disabled = true;
- input.disabled = true;
- const list = $('flItemsList');
- if (list) list.innerHTML = '<div class="fl-parsing">Analysing your food with AI…</div>';
-
- try {
-   const items = await runFoodAI(text, null);
-   await commitFoodItems(items, foodCat, foodLogDate);
-   if (input) input.value = '';
-   renderFoodTotals();
-   renderFoodItems();
-   renderDashboard();
-   checkProteinAlert();
-   const est = items.filter(i => i.source === 'estimate').length;
-   toast('Logged ' + items.length + ' item' + (items.length > 1 ? 's' : '') + ' to ' + foodCat + (est ? ' \u00b7 ' + est + ' to review' : ''));
- } catch(e) {
- console.error('logFood error', e);
- const msg = e && e.message ? e.message : String(e);
- if (msg === 'NO_KEY') {
- toast('❌ Set an AI key — tap ✦ → Settings');
- } else if (msg.includes('API key') || msg.includes('INVALID_ARGUMENT')) {
- toast('❌ Invalid API key — check Settings');
- } else if (msg.includes('QUOTA') || msg.includes('quota') || msg.includes('429')) {
- toast('❌ Both AI quotas exhausted — add fresh keys in Settings');
- } else if (msg.includes('No items parsed')) {
- toast('❌ Could not parse — try: "2 rotis, 100g paneer, 1 banana"');
- } else if (msg.includes('PERMISSION_DENIED') || msg.includes('permission')) {
- toast('❌ Firebase permission denied — check Firestore rules');
- } else {
- toast('❌ ' + msg.slice(0, 80));
- }
- renderFoodItems();
- } finally {
- btn.disabled = false;
- if (input) input.disabled = false;
- }
-}
+/* Legacy entry point (the diet page input was removed in V9.13) — the Quick
+   Log sheet is now the single food-logging surface. */
+async function logFood() { openQuickLog(); }
 
 function checkProteinAlert() {
  const log = getFoodLog(todayISO());
@@ -7250,88 +7464,256 @@ function showMilestone(kg) {
 function closeMilestone() { const ov = $('msOverlay'); if (ov) ov.classList.remove('open'); }
 window.closeMilestone = closeMilestone;
 
-/* ---------- Vision AI (Gemini primary, Groq llama-4-scout fallback) ---------- */
-const GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
-async function callAIVision(userPrompt, systemPrompt, base64, mime) {
-  // Food PHOTO logging prefers GEMINI (better vision); falls back to Groq vision only if Gemini is rate-limited/unavailable.
-  const geminiKey = getGeminiKey();
-  const groqKey = getGroqKey();
-  if (geminiKey) {
-    try {
-      const payload = { contents: [{ role: 'user', parts: [{ text: userPrompt }, { inline_data: { mime_type: mime, data: base64 } }] }], generationConfig: { temperature: 0.3, maxOutputTokens: 1200 } };
-      if (systemPrompt) payload.system_instruction = { parts: [{ text: systemPrompt }] };
-      const res = await fetch(GEMINI_API_BASE + GEMINI_MODEL + ':generateContent?key=' + geminiKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (data.error) { const msg = data.error.message || ''; if (res.status === 429 || /quota|resource_exhausted|rate.?limit|too many/i.test(msg)) throw new Error('QUOTA'); throw new Error(msg || 'Gemini error'); }
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (!text) throw new Error('Empty Gemini response');
-      updateChatProviderLabel('Gemini 2.0 Flash · vision');
-      return { text, provider: 'gemini' };
-    } catch (e) { if (!groqKey) throw e; /* Gemini unavailable -> fall back to Groq vision */ }
+/* ============================================================
+   AI TRANSPORT v2 (food logging)
+   - aiFetch: hard timeout + one retry on network blips + safe body parsing
+     (a captive portal or HTML error page can no longer crash the parser)
+   - model chains: a retired model name auto-falls to the next; the working
+     name is remembered in localStorage so the next call is first-try fast
+   - JSON mode on both providers: the model is FORCED to return valid JSON
+   - coded errors (NO_KEY / KEY_INVALID / QUOTA / TIMEOUT / NETWORK / PARSE)
+     so the UI can say exactly what went wrong
+   ============================================================ */
+function ForgeAIError(code, message) { const e = new Error(message || code); e.code = code; return e; }
+
+async function aiFetch(url, options, timeoutMs, _retried) {
+  timeoutMs = timeoutMs || 25000;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(url, Object.assign({}, options, { signal: ctrl.signal }));
+  } catch (e) {
+    clearTimeout(timer);
+    if (ctrl.signal.aborted) throw ForgeAIError('TIMEOUT', 'AI request timed out');
+    if (!_retried) { await new Promise(r => setTimeout(r, 800)); return aiFetch(url, options, timeoutMs, true); }
+    throw ForgeAIError('NETWORK', 'Network error');
   }
-  if (groqKey) {
-    const dataUri = 'data:' + mime + ';base64,' + base64;
-    const promptText = (systemPrompt ? systemPrompt + '\n\n' : '') + userPrompt;
-    const res = await fetch(GROQ_API_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey }, body: JSON.stringify({ model: GROQ_VISION_MODEL, messages: [{ role: 'user', content: [{ type: 'text', text: promptText }, { type: 'image_url', image_url: { url: dataUri } }] }], temperature: 0.3, max_tokens: 1200 }) });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message || 'Groq vision error');
-    const text = data.choices?.[0]?.message?.content || '';
-    if (!text) throw new Error('Empty Groq response');
-    updateChatProviderLabel('Groq · Llama 4 Scout vision');
-    return { text, provider: 'groq' };
-  }
-  throw new Error('NO_KEY');
+  clearTimeout(timer);
+  let data = null, raw = '';
+  try { raw = await res.text(); data = raw ? JSON.parse(raw) : null; } catch (e) { /* non-JSON body (proxy/HTML error page) */ }
+  return { ok: res.ok, status: res.status, data, raw };
 }
 
-async function callAIFood(userPrompt, systemPrompt, opts = {}) {
-  // Food TEXT parsing prefers GEMINI; falls back to Groq only if Gemini is rate-limited/unavailable, so logging never hard-fails.
-  const geminiKey = getGeminiKey();
-  const groqKey = getGroqKey();
-  if (geminiKey) {
+function getWorkingModels() { try { return JSON.parse(localStorage.getItem(WORKING_MODEL_LS) || '{}'); } catch (e) { return {}; } }
+function rememberWorkingModel(slot, model) {
+  try { const m = getWorkingModels(); if (m[slot] !== model) { m[slot] = model; localStorage.setItem(WORKING_MODEL_LS, JSON.stringify(m)); } } catch (e) {}
+}
+function modelChain(slot, defaults) {
+  const m = getWorkingModels()[slot];
+  return m ? [m].concat(defaults.filter(x => x !== m)) : defaults.slice();
+}
+
+/* Gemini — header auth (key never sits in the URL), JSON mode, model chain */
+async function geminiGenerate(opts) {
+  const key = getGeminiKey();
+  if (!key) throw ForgeAIError('NO_KEY', 'No Gemini key');
+  const parts = [{ text: opts.user }];
+  if (opts.imageBase64) parts.push({ inline_data: { mime_type: opts.imageMime || 'image/jpeg', data: opts.imageBase64 } });
+
+  const queue = modelChain('gemini', GEMINI_MODELS);
+  let lastErr = null;
+  while (queue.length) {
+    const model = queue[0];
+    const gen = { temperature: opts.temperature != null ? opts.temperature : 0.2, maxOutputTokens: opts.maxTokens || 3000 };
+    if (opts.json) gen.responseMimeType = 'application/json';
+    if (model.indexOf('2.5') > -1 && !opts._noThinkCfg) gen.thinkingConfig = { thinkingBudget: 0 }; // speed: no hidden reasoning for parsing
+    const payload = { contents: [{ role: 'user', parts }], generationConfig: gen };
+    if (opts.system) payload.system_instruction = { parts: [{ text: opts.system }] };
+
+    const r = await aiFetch(GEMINI_API_BASE + model + ':generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify(payload)
+    }, 30000);
+
+    if (!r.ok || (r.data && r.data.error)) {
+      const err = (r.data && r.data.error) || {};
+      const msg = err.message || ('Gemini HTTP ' + r.status);
+      if (/thinking/i.test(msg) && !opts._noThinkCfg) { opts._noThinkCfg = true; continue; }        // model dislikes thinkingConfig -> retry without
+      if (r.status === 404 || /not found|not supported|unknown name/i.test(msg)) { lastErr = ForgeAIError('MODEL_GONE', msg); queue.shift(); continue; }
+      if (r.status === 429 || /quota|resource_exhausted|rate.?limit/i.test(msg)) throw ForgeAIError('QUOTA', 'Gemini quota hit');
+      if ((r.status === 400 && /api.?key/i.test(msg)) || r.status === 401 || r.status === 403) throw ForgeAIError('KEY_INVALID', 'Google rejected the Gemini key');
+      if (r.status >= 500) { lastErr = ForgeAIError('SERVER', msg); queue.shift(); continue; }
+      throw ForgeAIError('PROVIDER', msg);
+    }
+
+    const cand = r.data && r.data.candidates && r.data.candidates[0];
+    const text = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
+    if (!text) {
+      if (cand && cand.finishReason === 'SAFETY') throw ForgeAIError('PROVIDER', 'Gemini declined this content');
+      lastErr = ForgeAIError('EMPTY', 'Empty Gemini response'); queue.shift(); continue;
+    }
+    rememberWorkingModel('gemini', model);
+    return { text, provider: 'Gemini ' + model.replace('gemini-', '') };
+  }
+  throw lastErr || ForgeAIError('PROVIDER', 'Gemini unavailable');
+}
+
+/* Groq — JSON mode, model chain, vision via data-URI */
+async function groqGenerate(opts) {
+  const key = getGroqKey();
+  if (!key) throw ForgeAIError('NO_KEY', 'No Groq key');
+  const messages = [];
+  if (opts.imageDataUri) {
+    const promptText = (opts.system ? opts.system + '\n\n' : '') + opts.user;
+    messages.push({ role: 'user', content: [{ type: 'text', text: promptText }, { type: 'image_url', image_url: { url: opts.imageDataUri } }] });
+  } else {
+    if (opts.system) messages.push({ role: 'system', content: opts.system });
+    messages.push({ role: 'user', content: opts.user });
+  }
+
+  const slot = opts.slot || 'groq_food';
+  const queue = modelChain(slot, opts.models || GROQ_FOOD_MODELS);
+  let useJson = !!opts.json;
+  let lastErr = null;
+  while (queue.length) {
+    const model = queue[0];
+    const body = { model, messages, temperature: opts.temperature != null ? opts.temperature : 0.2, max_tokens: opts.maxTokens || 2000 };
+    if (useJson) body.response_format = { type: 'json_object' };
+
+    const r = await aiFetch(GROQ_API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify(body)
+    }, 30000);
+
+    if (!r.ok || (r.data && r.data.error)) {
+      const err = (r.data && r.data.error) || {};
+      const msg = err.message || ('Groq HTTP ' + r.status);
+      if (r.status === 404 || /decommissioned|model_not_found|does not exist|not found/i.test(msg)) { lastErr = ForgeAIError('MODEL_GONE', msg); queue.shift(); continue; }
+      if (r.status === 429 || /rate.?limit|quota/i.test(msg)) throw ForgeAIError('QUOTA', 'Groq quota hit');
+      if (r.status === 401 || r.status === 403 || /invalid.?api.?key/i.test(msg)) throw ForgeAIError('KEY_INVALID', 'Groq rejected the key');
+      if (useJson && /response_format|json/i.test(msg)) { useJson = false; continue; }              // model lacks JSON mode -> retry plain
+      if (r.status >= 500) { lastErr = ForgeAIError('SERVER', msg); queue.shift(); continue; }
+      throw ForgeAIError('PROVIDER', msg);
+    }
+
+    const text = r.data && r.data.choices && r.data.choices[0] && r.data.choices[0].message ? (r.data.choices[0].message.content || '') : '';
+    if (!text) { lastErr = ForgeAIError('EMPTY', 'Empty Groq response'); queue.shift(); continue; }
+    rememberWorkingModel(slot, model);
+    return { text, provider: 'Groq ' + String(model).split('/').pop().split('-').slice(0, 2).join('-') };
+  }
+  throw lastErr || ForgeAIError('PROVIDER', 'Groq unavailable');
+}
+
+function shortAIErr(e) {
+  switch (e && e.code) {
+    case 'KEY_INVALID': return 'invalid key';
+    case 'QUOTA': return 'quota hit';
+    case 'TIMEOUT': return 'timed out';
+    case 'NETWORK': return 'network error';
+    case 'NO_KEY': return 'no key';
+    default: return ((e && e.message) || 'failed').slice(0, 48);
+  }
+}
+
+/* ---------- Vision AI: Gemini primary, Groq vision fallback ---------- */
+async function callAIVision(userPrompt, systemPrompt, base64, mime, opts) {
+  opts = opts || {};
+  const onStatus = opts.onStatus || function () {};
+  const gem = getGeminiKey(), grq = getGroqKey();
+  if (!gem && !grq) throw ForgeAIError('NO_KEY', 'Add an AI key in Settings');
+  let gemErr = null;
+  if (gem) {
     try {
-      const payload = { contents: [{ role: 'user', parts: [{ text: userPrompt }] }], generationConfig: { temperature: opts.temperature ?? 0.2, maxOutputTokens: opts.maxTokens ?? 1100 } };
-      if (systemPrompt) payload.system_instruction = { parts: [{ text: systemPrompt }] };
-      const res = await fetch(GEMINI_API_BASE + GEMINI_MODEL + ':generateContent?key=' + geminiKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (data.error) { const msg = data.error.message || ''; if (res.status === 429 || /quota|resource_exhausted|rate.?limit|too many/i.test(msg)) throw new Error('QUOTA'); throw new Error(msg || 'Gemini error'); }
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (!text) throw new Error('Empty Gemini response');
-      return { text, provider: 'gemini' };
-    } catch (e) { if (!groqKey) throw e; /* Gemini unavailable -> fall back to Groq */ }
+      onStatus('Reading your photo (Gemini)…');
+      return await geminiGenerate({ system: systemPrompt, user: userPrompt, imageBase64: base64, imageMime: mime, json: true, maxTokens: 3000, temperature: 0.3 });
+    } catch (e) { gemErr = e; if (!grq) throw e; }
   }
-  if (groqKey) {
-    const messages = [];
-    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
-    messages.push({ role: 'user', content: userPrompt });
-    const res = await fetch(GROQ_API_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey }, body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: opts.temperature ?? 0.2, max_tokens: opts.maxTokens ?? 1100 }) });
-    const data = await res.json();
-    if (data.error) { const msg = data.error?.message || ''; if (res.status === 429 || /rate.?limit|quota|too many/i.test(msg)) throw new Error('QUOTA'); throw new Error(msg || 'Groq error'); }
-    const text = data.choices?.[0]?.message?.content || '';
-    if (!text) throw new Error('Empty Groq response');
-    return { text, provider: 'groq' };
+  onStatus(gemErr ? 'Gemini busy — trying Groq vision…' : 'Reading your photo (Groq)…');
+  try {
+    return await groqGenerate({ system: systemPrompt, user: userPrompt, imageDataUri: 'data:' + mime + ';base64,' + base64, json: true, slot: 'groq_vision', models: GROQ_VISION_MODELS, maxTokens: 3000, temperature: 0.3 });
+  } catch (e) {
+    if (gemErr) throw ForgeAIError(e.code || 'PROVIDER', 'Gemini: ' + shortAIErr(gemErr) + ' · Groq: ' + shortAIErr(e));
+    throw e;
   }
-  throw new Error('NO_KEY');
+}
+
+/* ---------- Food text AI: Gemini primary, Groq fallback ---------- */
+async function callAIFood(userPrompt, systemPrompt, opts) {
+  opts = opts || {};
+  const onStatus = opts.onStatus || function () {};
+  const gem = getGeminiKey(), grq = getGroqKey();
+  if (!gem && !grq) throw ForgeAIError('NO_KEY', 'Add an AI key in Settings');
+  let gemErr = null;
+  if (gem) {
+    try {
+      onStatus('Reading your food (Gemini)…');
+      return await geminiGenerate({ system: systemPrompt, user: userPrompt, json: true, maxTokens: opts.maxTokens || 3000, temperature: opts.temperature != null ? opts.temperature : 0.2 });
+    } catch (e) { gemErr = e; if (!grq) throw e; }
+  }
+  onStatus(gemErr ? 'Gemini busy — trying Groq…' : 'Reading your food (Groq)…');
+  try {
+    return await groqGenerate({ system: systemPrompt, user: userPrompt, json: true, slot: 'groq_food', models: GROQ_FOOD_MODELS, maxTokens: opts.maxTokens || 2000, temperature: opts.temperature != null ? opts.temperature : 0.2 });
+  } catch (e) {
+    if (gemErr) throw ForgeAIError(e.code || 'PROVIDER', 'Gemini: ' + shortAIErr(gemErr) + ' · Groq: ' + shortAIErr(e));
+    throw e;
+  }
 }
 
 /* ---------- Shared food-AI pipeline: LOCAL DB parse first, AI only when needed ---------- */
-async function runFoodAI(text, imageData) {
-  // 1) Typed text -> try the local DB parser first. No AI call, no quota, instant.
+function sanitizeParsedItems(parsed) {
+  if (!Array.isArray(parsed)) return [];
+  const num = v => { const n = parseFloat(v); return isFinite(n) && n > 0 ? n : null; };
+  const nz = v => { const n = parseFloat(v); return isFinite(n) && n >= 0 ? n : 0; };
+  return parsed.slice(0, 12).map(it => {
+    if (!it || typeof it !== 'object') return null;
+    const name = String(it.name || it.food || it.q || '').trim();
+    if (!name || name.length > 60) return null;
+    const o = { name };
+    if (typeof it.q === 'string' && it.q.trim()) o.q = it.q.trim().slice(0, 60);
+    const c = num(it.count); if (c) o.count = Math.min(c, 50);
+    if (typeof it.unit === 'string' && it.unit.length < 20) o.unit = it.unit;
+    const g = num(it.grams); if (g) o.grams = Math.min(g, 3000);
+    if (it.per100 && typeof it.per100 === 'object') {
+      const k = num(it.per100.kcal);
+      if (k) o.per100 = { kcal: Math.min(k, 900), p: nz(it.per100.p), c: nz(it.per100.c), f: nz(it.per100.f) };
+    }
+    return o;
+  }).filter(Boolean);
+}
+
+async function runFoodAI(text, imageData, onStatus) {
+  onStatus = onStatus || function () {};
+  // 1) Typed text -> local DB parser first. No AI call, no quota, instant, exact.
   if (!imageData && text) {
-    try { const local = FoodEngine.localParse(text); if (local && local.length) return FoodEngine.resolveItems(local); } catch (e) { /* fall through to AI */ }
+    try {
+      const local = FoodEngine.localParse(text);
+      if (local && local.length) return { items: FoodEngine.resolveItems(local), via: 'local' };
+    } catch (e) { /* fall through to AI */ }
   }
-  // 2) Only now reach for AI (Gemini-preferred, Groq fallback) -> photos, novel foods, or messy text.
+  // 2) AI path (photos, novel foods, messy text) — JSON-mode output, then sanitized.
   const sys = FoodEngine.buildParsePrompt();
-  let raw;
+  let raw, provider;
   if (imageData) {
-    ({ text: raw } = await callAIVision(FoodEngine.buildParseUserPhoto(text), sys, imageData.base64, imageData.mime));
+    const r = await callAIVision(FoodEngine.buildParseUserPhoto(text), sys, imageData.base64, imageData.mime, { onStatus });
+    raw = r.text; provider = r.provider;
   } else {
-    ({ text: raw } = await callAIFood(FoodEngine.buildParseUserText(text), sys, { temperature: 0.2, maxTokens: 1100 }));
+    const r = await callAIFood(FoodEngine.buildParseUserText(text), sys, { onStatus });
+    raw = r.text; provider = r.provider;
   }
-  const parsed = extractJSON(raw);
-  if (!parsed || !Array.isArray(parsed) || parsed.length === 0) throw new Error('No items parsed');
+  const parsed = sanitizeParsedItems(extractJSON(raw));
+  if (!parsed.length) throw ForgeAIError('PARSE', 'Could not read that — try simpler wording like "2 rotis, 1 katori dal"');
   const items = FoodEngine.resolveItems(parsed);
-  if (!items.length) throw new Error('No items parsed');
-  return items;
+  if (!items.length) throw ForgeAIError('PARSE', 'Could not read that — try simpler wording like "2 rotis, 1 katori dal"');
+  return { items, via: 'ai', provider };
+}
+
+/* Recipe mode: parse RAW ingredients of a home-cooked dish. Local DB first
+   (raw-ingredient entries), AI with recipe prompts only for the rest. */
+async function runRecipeParse(text, onStatus) {
+  onStatus = onStatus || function () {};
+  try {
+    const local = FoodEngine.localParse(text, { recipe: true });
+    if (local && local.length) return { items: FoodEngine.resolveItems(local, { recipe: true }), via: 'local' };
+  } catch (e) { /* fall through to AI */ }
+  const r = await callAIFood(FoodEngine.buildRecipeUserText(text), FoodEngine.buildRecipePrompt(), { onStatus });
+  const parsed = sanitizeParsedItems(extractJSON(r.text));
+  if (!parsed.length) throw ForgeAIError('PARSE', 'Could not read the ingredients — try like "2 tbsp ghee, 30g onion, 50g rice, 50g dal"');
+  const items = FoodEngine.resolveItems(parsed, { recipe: true });
+  if (!items.length) throw ForgeAIError('PARSE', 'Could not read the ingredients — try like "2 tbsp ghee, 30g onion, 50g rice, 50g dal"');
+  return { items, via: 'ai', provider: r.provider };
 }
 
 async function commitFoodItems(items, category, date) {
@@ -7411,13 +7793,19 @@ async function openFoodFix(cat, idx) {
 window.openFoodFix = openFoodFix;
 
 function foodErrorToast(e) {
+  const code = e && e.code;
   const msg = (e && e.message) ? e.message : String(e);
-  if (msg === 'NO_KEY') return 'Add an AI key in Settings first.';
-  if (msg.includes('API key') || msg.includes('INVALID_ARGUMENT')) return 'Invalid API key — check Settings.';
-  if (msg.includes('QUOTA') || msg.includes('quota') || msg.includes('429')) return 'AI quota hit — try again later or add a fresh key.';
-  if (msg.includes('No items parsed')) return 'Could not read that — try clearer text or a sharper photo.';
-  if (msg.includes('PERMISSION_DENIED') || msg.includes('permission')) return 'Cloud permission denied — check Firestore rules.';
-  return msg.slice(0, 90);
+  if (code === 'NO_KEY')      return 'Add a Groq or Gemini key first — Menu → AI keys.';
+  if (code === 'KEY_INVALID') return msg + ' — re-paste it in Settings.';
+  if (code === 'QUOTA')       return 'AI quota hit — try again in a minute.';
+  if (code === 'TIMEOUT')     return 'AI took too long — check signal and retry.';
+  if (code === 'NETWORK')     return 'No connection — check internet and retry.';
+  if (code === 'MODEL_GONE')  return 'AI model unavailable — retried alternates, none worked. Try again later.';
+  if (code === 'PARSE')       return msg;
+  // non-AI errors (Firestore etc.) fall through to string matching
+  if (msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions') || msg.includes('permission')) return 'Cloud permission denied — check Firestore rules. (Your log is saved on this device.)';
+  if (msg.includes('quota') || msg.includes('429')) return 'AI quota hit — try again in a minute.';
+  return msg.slice(0, 110);
 }
 
 /* ---------- Image helper: resize to keep payload small ---------- */
@@ -7445,11 +7833,27 @@ function fileToResizedBase64(file, maxDim) {
   });
 }
 
-/* ---------- Quick Log bubble ---------- */
+/* ---------- Quick Log bubble (the food-logging surface) ----------
+   Flow: known foods typed cleanly -> matched against the local DB and logged
+   INSTANTLY (no AI, no quota). Anything else (photos, novel foods, messy
+   text) -> AI reads it, then a REVIEW CARD shows every item with its numbers
+   so nothing wrong ever lands in the log without your OK. */
 const QL_LABELS = { preworkout: 'Pre-Workout', breakfast: 'Breakfast', lunch: 'Lunch', snack: 'Snack', bridge: 'Bridge Snack', dinner: 'Dinner' };
 let qlCat = 'breakfast';
-let qlPhoto = null;
+let qlMicActive = false;   // mic session running
+let qlRec = null;          // SpeechRecognition instance
+let qlMicBase = '';        // text already in the box when this take started
+let qlMicFinal = '';       // finalised words from this take
+let qlMicErr = false;
 let qlBusy = false;
+let qlPending = null; // { items, via, provider, recipe?, frac, potW, servW, name, save } awaiting confirmation
+let qlRecipe = false;  // true => input is a raw-ingredient list of one cooked dish
+
+function escapeHTML(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
 
 function defaultQlCat() {
   const h = new Date().getHours();
@@ -7460,21 +7864,29 @@ function defaultQlCat() {
   return 'dinner';
 }
 function openQuickLog() {
-  qlCat = defaultQlCat();
+  if (!qlPending) {
+    qlCat = defaultQlCat();
+    qlRecipe = false;
+    qlApplyMode();
+    qlSetStatus('');
+  }
   document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === qlCat));
-  qlSetStatus('');
   $('qlOverlay').classList.add('open');
   $('qlSheet').classList.add('open');
   haptic('open');
-  setTimeout(() => { const i = $('qlInput'); if (i) i.focus(); }, 260);
+  if (qlPending) { qlRerender(); }
+  else setTimeout(() => { const i = $('qlInput'); if (i) i.focus(); }, 260);
 }
 function closeQuickLog() {
+  qlStopMic();
   $('qlOverlay').classList.remove('open');
   $('qlSheet').classList.remove('open');
+  // a pending review survives an accidental close — reopen to continue
 }
 function qlSetCat(cat) {
   qlCat = cat;
   document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  if (qlPending) qlRerender(); // confirm button label follows the category
   haptic('tap');
 }
 function qlKeydown(e) {
@@ -7486,50 +7898,79 @@ function qlSetStatus(msg, isErr) {
   s.textContent = msg || '';
   s.classList.toggle('err', !!isErr);
 }
-async function qlPhotoPicked(ev) {
-  const file = ev.target.files && ev.target.files[0];
-  if (!file) return;
-  try {
-    qlSetStatus('Preparing photo…');
-    qlPhoto = await fileToResizedBase64(file, 1024);
-    const img = $('qlThumb'); if (img) img.src = qlPhoto.dataUri;
-    $('qlThumbWrap').classList.add('show');
-    qlSetStatus('Photo ready — add a note or just tap send.');
-    haptic('tap');
-  } catch (e) {
-    qlPhoto = null;
-    qlSetStatus(foodErrorToast(e), true);
+/* ----- voice input: tap to talk, tap to stop; each take APPENDS so you can
+   dictate ingredient-by-ingredient while cooking, then send once at the end ----- */
+function qlSpeechSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+function qlToggleMic() {
+  if (qlMicActive) { try { qlRec && qlRec.stop(); } catch (e) {} return; } // tap #2 = stop & keep text
+  if (!qlSpeechSupported()) {
+    qlSetStatus('Voice input is not available in this app shell — open Forge in Chrome, or type instead.', true);
+    return;
   }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  qlRec = new SR();
+  qlRec.lang = 'en-IN';          // Indian English; handles Hinglish food words well
+  qlRec.continuous = true;       // survive short thinking pauses within one take
+  qlRec.interimResults = true;   // words appear live as you speak
+  qlRec.maxAlternatives = 1;
+  const input = $('qlInput');
+  const cur = (input ? input.value : '').replace(/[\s,]+$/, '').trim();
+  qlMicBase = cur ? cur + ', ' : ''; // comma keeps the parser happy between takes
+  qlMicFinal = '';
+  qlMicErr = false;
+  qlRec.onresult = ev => {
+    let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) qlMicFinal += t + ' '; else interim += t;
+    }
+    if (input) { input.value = (qlMicBase + (qlMicFinal + interim).replace(/\s+/g, ' ').trimStart()); qlResize(input); }
+  };
+  qlRec.onerror = ev => {
+    qlMicErr = true;
+    const c = ev.error;
+    if (c === 'not-allowed' || c === 'service-not-allowed') qlSetStatus('Mic permission denied — allow the microphone for Forge and try again.', true);
+    else if (c === 'no-speech') qlSetStatus('Heard nothing — tap the mic and speak.', true);
+    else if (c === 'audio-capture') qlSetStatus('No microphone found on this device.', true);
+    else if (c === 'network') qlSetStatus('Voice needs internet — check connection and retry.', true);
+    else if (c !== 'aborted') qlSetStatus('Voice error (' + c + ') — try again or type.', true);
+  };
+  qlRec.onend = () => {
+    qlMicActive = false; qlMicUI(false);
+    if (input) {
+      const v = (qlMicBase + qlMicFinal).replace(/\s+/g, ' ').replace(/[\s,]+$/, '').trim();
+      input.value = v; qlResize(input);
+      if (!qlMicErr) qlSetStatus(v ? 'Added — tap 🎤 to add more, or send when done.' : '');
+    }
+    haptic('tap');
+  };
+  try { qlRec.start(); } catch (e) { qlSetStatus('Could not start the mic — try again.', true); return; }
+  qlMicActive = true; qlMicUI(true);
+  qlSetStatus('Listening… tap the mic again to stop.');
+  haptic('tap');
 }
-function qlClearPhoto() {
-  qlPhoto = null;
-  $('qlThumbWrap').classList.remove('show');
-  const inp = $('qlPhotoInput'); if (inp) inp.value = '';
-}
+function qlMicUI(on) { const b = $('qlMicBtn'); if (b) b.classList.toggle('listening', !!on); }
+function qlStopMic() { if (qlMicActive) { try { qlRec && qlRec.stop(); } catch (e) {} } }
+
 async function submitQuickLog() {
   if (qlBusy) return;
+  if (qlPending) return qlConfirmReview(); // send button doubles as confirm
+  qlStopMic();
+  if (qlRecipe) return submitRecipe();
   const input = $('qlInput');
   const text = input ? input.value.trim() : '';
-  if (!text && !qlPhoto) { qlSetStatus('Type what you ate, or add a photo.', true); return; }
-  if (qlPhoto && !getGeminiKey() && !getGroqKey()) { qlSetStatus('Photo logging needs a Gemini or Groq key (Settings).', true); return; }
+  if (!text) { qlSetStatus('Speak or type what you ate.', true); return; }
 
   qlBusy = true;
   const send = $('qlSend'); if (send) send.disabled = true;
-  qlSetStatus('Analysing' + (qlPhoto ? ' your photo' : '') + '…');
+  qlSetStatus('Checking the food database…');
   try {
-    const items = await runFoodAI(text, qlPhoto);
-    const date = todayISO();
-    await commitFoodItems(items, qlCat, date);
-    haptic('success');
-    if (foodLogDate === date) { renderFoodTotals(); renderFoodItems(); }
-    if (activeSection === 'dashboard') renderDashboard();
-    checkProteinAlert();
-    const label = QL_LABELS[qlCat] || qlCat;
-    qlSetStatus('Logged ' + items.length + ' item' + (items.length > 1 ? 's' : '') + ' to ' + label + '.');
-    if (input) { input.value = ''; qlResize(input); }
-    qlClearPhoto();
-    toast('Logged to ' + label);
-    setTimeout(() => { qlSetStatus(''); closeQuickLog(); }, 1000);
+    const res = await runFoodAI(text, null, msg => qlSetStatus(msg));
+    if (res.via === 'local') {
+      await qlCommit(res.items); // exact DB hit -> instant, tap any item later to adjust
+    } else {
+      qlShowReview(res);         // AI read -> confirm before it touches the log
+    }
   } catch (e) {
     console.error('quickLog error', e);
     haptic('error');
@@ -7539,14 +7980,263 @@ async function submitQuickLog() {
     if (send) send.disabled = false;
   }
 }
+
+async function qlCommit(items) {
+  const date = todayISO();
+  await commitFoodItems(items, qlCat, date);
+  haptic('success');
+  if (foodLogDate === date) { renderFoodTotals(); renderFoodItems(); }
+  if (activeSection === 'dashboard') renderDashboard();
+  checkProteinAlert();
+  const label = QL_LABELS[qlCat] || qlCat;
+  const kcal = Math.round(items.reduce((s, i) => s + (i.calories || 0), 0));
+  qlSetStatus('Logged ' + items.length + ' item' + (items.length > 1 ? 's' : '') + ' · ' + kcal + ' kcal to ' + label + '.');
+  const input = $('qlInput'); if (input) { input.value = ''; qlResize(input); }
+  qlClearReview();
+  toast('Logged to ' + label + ' · ' + kcal + ' kcal');
+  setTimeout(() => { qlSetStatus(''); closeQuickLog(); }, 1100);
+}
+
+/* ----- review card ----- */
+function qlShowReview(res) {
+  qlPending = res;
+  renderQlReview();
+  const row = document.querySelector('.ql-input-row'); if (row) row.style.display = 'none';
+  qlSetStatus('Tap an item to fix its portion, × to drop it.');
+  haptic('tap');
+}
+function renderQlReview() {
+  const wrap = $('qlReview'); if (!wrap || !qlPending) return;
+  const items = qlPending.items;
+  const kcal = Math.round(items.reduce((s, i) => s + (i.calories || 0), 0));
+  const pro = Math.round(items.reduce((s, i) => s + (i.protein || 0), 0));
+  const srcLabel = it => it.source === 'estimate' ? 'AI estimate' : (it.source === 'personal' ? 'your food' : (it.source === 'recipe' ? 'your recipe' : 'database'));
+  wrap.innerHTML =
+    '<div class="qlr-head"><span>AI read ' + items.length + ' item' + (items.length > 1 ? 's' : '') + '</span><span class="qlr-src">' + escapeHTML(qlPending.provider || 'AI') + '</span></div>'
+    + items.map((it, i) =>
+      '<div class="qlr-item">'
+      + '<div class="qlr-left" onclick="qlEditReviewItem(' + i + ')" title="Tap to adjust portion">'
+      + '<div class="qlr-name">' + escapeHTML(it.name) + '</div>'
+      + '<div class="qlr-meta">' + escapeHTML(it.quantity || ((it.grams || 100) + ' g')) + ' · ' + srcLabel(it) + '</div>'
+      + '</div>'
+      + '<div class="qlr-right"><div class="qlr-cal">' + Math.round(it.calories) + ' kcal</div><div class="qlr-mac">P ' + Math.round(it.protein) + ' · C ' + Math.round(it.carbs) + ' · F ' + Math.round(it.fat) + '</div></div>'
+      + '<button class="qlr-x" onclick="qlRemoveReviewItem(' + i + ')" aria-label="Remove item">×</button>'
+      + '</div>'
+    ).join('')
+    + '<div class="qlr-total">Total: ' + kcal + ' kcal · ' + pro + 'g protein</div>'
+    + '<div class="qlr-actions">'
+    + '<button class="qlr-discard" onclick="qlDiscardReview()">Discard</button>'
+    + '<button class="qlr-confirm" onclick="qlConfirmReview()">Log to ' + escapeHTML(QL_LABELS[qlCat] || qlCat) + '</button>'
+    + '</div>';
+  wrap.classList.add('show');
+}
+function qlEditReviewItem(i) {
+  if (!qlPending || !qlPending.items[i]) return;
+  const it = qlPending.items[i];
+  const cur = it.grams || 100;
+  const ans = prompt('Portion for "' + it.name + '" in grams:', String(cur));
+  if (ans === null) return;
+  const grams = Math.round(parseFloat(ans));
+  if (!(grams > 0)) { toast('Enter grams as a number'); return; }
+  let per100;
+  const e = it.matchId && window.FoodEngine ? FoodEngine.getEntry(it.matchId) : null;
+  if (e) per100 = e.per100;
+  else per100 = { kcal: it.calories / cur * 100, p: it.protein / cur * 100, c: it.carbs / cur * 100, f: it.fat / cur * 100 };
+  const m = FoodEngine.clampMacros(FoodEngine.fromPer100(per100, grams), grams);
+  it.grams = grams; it.quantity = grams + ' g';
+  it.calories = m.calories; it.protein = m.protein; it.carbs = m.carbs; it.fat = m.fat;
+  qlRerender();
+  haptic('tap');
+}
+function qlRemoveReviewItem(i) {
+  if (!qlPending) return;
+  qlPending.items.splice(i, 1);
+  if (!qlPending.items.length) return qlDiscardReview();
+  qlRerender();
+  haptic('tap');
+}
+async function qlConfirmReview() {
+  if (!qlPending || qlBusy) return;
+  if (qlPending.recipe) return qlConfirmRecipe();
+  qlBusy = true;
+  const send = $('qlSend'); if (send) send.disabled = true;
+  try { await qlCommit(qlPending.items); }
+  catch (e) { console.error('qlConfirm error', e); qlSetStatus(foodErrorToast(e), true); }
+  finally { qlBusy = false; if (send) send.disabled = false; }
+}
+function qlDiscardReview() {
+  qlClearReview();
+  qlSetStatus('Discarded — nothing was logged. Edit and try again.');
+  haptic('tap');
+}
+function qlClearReview() {
+  qlPending = null;
+  const wrap = $('qlReview'); if (wrap) { wrap.classList.remove('show'); wrap.innerHTML = ''; }
+  const row = document.querySelector('.ql-input-row'); if (row) row.style.display = '';
+}
+/* ----- recipe mode (log a cooked dish by its raw ingredients) ----- */
+function qlRerender() {
+  if (!qlPending) return;
+  if (qlPending.recipe) renderQlRecipeReview(); else renderQlReview();
+}
+function qlToggleRecipe() {
+  if (qlPending) return; // finish or discard the open review first
+  qlRecipe = !qlRecipe;
+  qlApplyMode();
+  qlSetStatus(qlRecipe ? 'List the raw amounts that went into the pot.' : '');
+  haptic('tap');
+  const i = $('qlInput'); if (i) i.focus();
+}
+function qlApplyMode() {
+  const btn = $('qlModeBtn'); const input = $('qlInput'); const hint = $('qlHint');
+  if (btn) { btn.classList.toggle('on', qlRecipe); btn.textContent = qlRecipe ? '✕ Back to normal logging' : '🍲 Cooked a dish? Log by ingredients'; }
+  if (input) input.placeholder = qlRecipe ? 'e.g. 2 tbsp ghee, 30g onion, 50g rice, 50g dal' : 'e.g. 2 rotis, 100g paneer, 1 banana';
+  if (hint) hint.textContent = qlRecipe
+    ? 'Speak the raw amounts as you cook — I total the dish, you pick your share'
+    : 'Tap 🎤 while cooking — each take adds on · send when done';
+}
+async function submitRecipe() {
+  qlStopMic();
+  const input = $('qlInput');
+  const text = input ? input.value.trim() : '';
+  if (!text) { qlSetStatus('List the raw ingredients with amounts.', true); return; }
+  qlBusy = true;
+  const send = $('qlSend'); if (send) send.disabled = true;
+  qlSetStatus('Reading your ingredients…');
+  try {
+    const res = await runRecipeParse(text, msg => qlSetStatus(msg));
+    qlPending = { items: res.items, via: res.via, provider: res.provider, recipe: true, frac: '1', potW: null, servW: null, name: '', save: false };
+    renderQlRecipeReview();
+    const row = document.querySelector('.ql-input-row'); if (row) row.style.display = 'none';
+    qlSetStatus('Tap an ingredient to fix its amount, × to drop it.');
+    haptic('tap');
+  } catch (e) {
+    console.error('recipe parse error', e);
+    haptic('error');
+    qlSetStatus(foodErrorToast(e), true);
+  } finally {
+    qlBusy = false;
+    if (send) send.disabled = false;
+  }
+}
+function qlRecipeTotals() {
+  return qlPending.items.reduce((a, i) => ({ kcal: a.kcal + (i.calories || 0), p: a.p + (i.protein || 0), c: a.c + (i.carbs || 0), f: a.f + (i.fat || 0), g: a.g + (i.grams || 0) }), { kcal: 0, p: 0, c: 0, f: 0, g: 0 });
+}
+function qlrShareText() {
+  const P = qlPending; if (!P) return '';
+  const t = qlRecipeTotals();
+  let f = 1, suffix = '';
+  if (P.frac === 'weigh') {
+    const pot = parseFloat(P.potW), serv = parseFloat(P.servW);
+    if (!(pot > 0) || !(serv > 0)) return 'Enter the cooked pot weight and your serving weight.';
+    if (serv > pot) return 'Serving cannot exceed the pot weight.';
+    f = serv / pot; suffix = ' (' + Math.round(serv) + ' g of ' + Math.round(pot) + ' g pot)';
+  } else f = parseFloat(P.frac);
+  return 'Your share: ' + Math.round(t.kcal * f) + ' kcal · ' + Math.round(t.p * f) + 'g protein' + suffix;
+}
+function renderQlRecipeReview() {
+  const wrap = $('qlReview'); if (!wrap || !qlPending) return;
+  const P = qlPending;
+  const items = P.items;
+  const t = qlRecipeTotals();
+  const srcLabel = it => it.source === 'estimate' ? 'AI estimate' : (it.source === 'personal' ? 'your food' : 'database');
+  const fracChip = (val, label) => '<button class="qlr-frac' + (P.frac === val ? ' active' : '') + '" onclick="qlrSetFrac(\'' + val + '\')">' + label + '</button>';
+  wrap.innerHTML =
+    '<div class="qlr-head"><span>Your dish · ' + items.length + ' ingredient' + (items.length > 1 ? 's' : '') + '</span><span class="qlr-src">' + escapeHTML(P.via === 'local' ? 'database' : (P.provider || 'AI')) + '</span></div>'
+    + items.map((it, i) =>
+      '<div class="qlr-item">'
+      + '<div class="qlr-left" onclick="qlEditReviewItem(' + i + ')" title="Tap to adjust amount">'
+      + '<div class="qlr-name">' + escapeHTML(it.name) + '</div>'
+      + '<div class="qlr-meta">' + escapeHTML(it.quantity || ((it.grams || 100) + ' g')) + ' · ' + srcLabel(it) + '</div>'
+      + '</div>'
+      + '<div class="qlr-right"><div class="qlr-cal">' + Math.round(it.calories) + ' kcal</div><div class="qlr-mac">P ' + Math.round(it.protein) + ' · C ' + Math.round(it.carbs) + ' · F ' + Math.round(it.fat) + '</div></div>'
+      + '<button class="qlr-x" onclick="qlRemoveReviewItem(' + i + ')" aria-label="Remove ingredient">×</button>'
+      + '</div>'
+    ).join('')
+    + '<div class="qlr-total">Whole dish: ' + Math.round(t.kcal) + ' kcal · ' + Math.round(t.p) + 'g protein · ' + Math.round(t.c) + 'g carbs · ' + Math.round(t.f) + 'g fat</div>'
+    + '<input class="qlr-namein" id="qlrName" type="text" maxlength="40" placeholder="Name it — e.g. My Khichdi" value="' + escapeHTML(P.name) + '" oninput="qlrSetName(this)" />'
+    + '<div class="qlr-fracs">' + fracChip('1', 'All of it') + fracChip('0.5', '½') + fracChip('0.333', '⅓') + fracChip('0.25', '¼') + fracChip('weigh', 'Weigh ⚖') + '</div>'
+    + (P.frac === 'weigh'
+      ? '<div class="qlr-weights"><input id="qlrPotW" type="number" inputmode="decimal" min="1" placeholder="Cooked pot (g)" value="' + (P.potW || '') + '" oninput="qlrSetPotW(this)" /><input id="qlrServW" type="number" inputmode="decimal" min="1" placeholder="My serving (g)" value="' + (P.servW || '') + '" oninput="qlrSetServW(this)" /></div>'
+      : '')
+    + '<div class="qlr-share" id="qlrShare">' + qlrShareText() + '</div>'
+    + '<label class="qlr-save"><input type="checkbox" id="qlrSaveCb"' + (P.save ? ' checked' : '') + ' onchange="qlrSetSave(this)" /> Save as my food (one-line exact logging next time)</label>'
+    + '<div class="qlr-actions">'
+    + '<button class="qlr-discard" onclick="qlDiscardReview()">Discard</button>'
+    + '<button class="qlr-confirm" onclick="qlConfirmReview()">Log my share to ' + escapeHTML(QL_LABELS[qlCat] || qlCat) + '</button>'
+    + '</div>';
+  wrap.classList.add('show');
+}
+function qlrSetFrac(v) { if (!qlPending) return; qlPending.frac = v; renderQlRecipeReview(); haptic('tap'); }
+function qlrSetName(el) { if (!qlPending) return; qlPending.name = el.value; if (el.value.trim() && !qlPending._saveTouched) { qlPending.save = true; const cb = $('qlrSaveCb'); if (cb) cb.checked = true; } }
+function qlrSetPotW(el) { if (!qlPending) return; qlPending.potW = el.value; const s = $('qlrShare'); if (s) s.textContent = qlrShareText(); }
+function qlrSetServW(el) { if (!qlPending) return; qlPending.servW = el.value; const s = $('qlrShare'); if (s) s.textContent = qlrShareText(); }
+function qlrSetSave(el) { if (!qlPending) return; qlPending.save = !!el.checked; qlPending._saveTouched = true; }
+async function qlConfirmRecipe() {
+  if (!qlPending || qlBusy) return;
+  const P = qlPending;
+  const t = qlRecipeTotals();
+  const r1 = x => Math.round(x * 10) / 10;
+  let f, shareG, qtyLabel;
+  if (P.frac === 'weigh') {
+    const pot = parseFloat(P.potW), serv = parseFloat(P.servW);
+    if (!(pot > 0) || !(serv > 0)) { qlSetStatus('Enter the cooked pot weight and your serving weight.', true); return; }
+    if (serv > pot) { qlSetStatus('Serving cannot exceed the pot weight.', true); return; }
+    f = serv / pot; shareG = Math.round(serv);
+    qtyLabel = shareG + ' g of ' + Math.round(pot) + ' g pot';
+  } else {
+    f = parseFloat(P.frac);
+    shareG = Math.round(t.g * f); // raw-mass basis when the pot was not weighed
+    qtyLabel = f === 1 ? 'whole recipe' : (P.frac === '0.5' ? 'half' : P.frac === '0.333' ? 'one-third' : 'quarter') + ' of recipe';
+  }
+  const name = (P.name || '').trim() || 'Home-cooked dish';
+  const entry = {
+    name, quantity: qtyLabel, grams: shareG,
+    calories: Math.round(t.kcal * f), protein: r1(t.p * f), carbs: r1(t.c * f), fat: r1(t.f * f),
+    source: 'recipe', matchId: null
+  };
+  qlBusy = true;
+  const send = $('qlSend'); if (send) send.disabled = true;
+  try {
+    if (P.save && name !== 'Home-cooked dish') await saveRecipeAsFood(name, t, P);
+    await qlCommit([entry]);
+  } catch (e) { console.error('recipe commit error', e); qlSetStatus(foodErrorToast(e), true); }
+  finally { qlBusy = false; if (send) send.disabled = false; }
+}
+async function saveRecipeAsFood(name, t, P) {
+  const pot = parseFloat(P.potW);
+  const W = pot > 0 ? pot : t.g; // density basis: cooked weight if known, else raw mass
+  if (!(W > 0)) return;
+  const r1 = x => Math.round(x * 10) / 10;
+  const row = {
+    id: 'u_recipe_' + name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30),
+    name, cat: qlCat,
+    per100: { kcal: r1(t.kcal / W * 100), p: r1(t.p / W * 100), c: r1(t.c / W * 100), f: r1(t.f / W * 100) },
+    units: pot > 0 ? [['1 katori', 150], ['full pot', Math.round(pot)]].map(u => ({ label: u[0], g: u[1] })) : [{ label: '1 full recipe', g: Math.round(t.g) }],
+    defG: pot > 0 ? 150 : Math.round(t.g),
+    aliases: [name.toLowerCase(), 'my ' + name.toLowerCase()]
+  };
+  const list = FoodEngine.upsertUserFood(row);
+  await saveUserFoods(list);
+  toast('Saved "' + name + '" — type it any time' + (pot > 0 ? '' : ' (weigh the cooked pot once for katori-level accuracy)'));
+}
 window.openQuickLog = openQuickLog;
 window.closeQuickLog = closeQuickLog;
 window.qlSetCat = qlSetCat;
 window.qlKeydown = qlKeydown;
 window.qlResize = qlResize;
-window.qlPhotoPicked = qlPhotoPicked;
-window.qlClearPhoto = qlClearPhoto;
+window.qlToggleMic = qlToggleMic;
+window.qlEditReviewItem = qlEditReviewItem;
+window.qlRemoveReviewItem = qlRemoveReviewItem;
+window.qlConfirmReview = qlConfirmReview;
+window.qlDiscardReview = qlDiscardReview;
 window.submitQuickLog = submitQuickLog;
+window.qlToggleRecipe = qlToggleRecipe;
+window.qlrSetFrac = qlrSetFrac;
+window.qlrSetName = qlrSetName;
+window.qlrSetPotW = qlrSetPotW;
+window.qlrSetServW = qlrSetServW;
+window.qlrSetSave = qlrSetSave;
 
 /* ---------- Nutrition trend chart dialog ---------- */
 let nxMetric = 'cal';
