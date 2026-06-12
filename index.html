@@ -7976,8 +7976,21 @@ function qlVoiceEngine() {
 }
 function qlMicPermMsg() {
   return qlIsWebView()
-    ? 'The app shell has no mic permission — the APK must be rebuilt with RECORD_AUDIO (exact steps are in our chat). Until then, open Forge in Chrome and voice works there.'
+    ? 'Mic blocked by the app shell. Check Android Settings → Apps → Forge → Permissions: if Microphone is NOT listed, this APK predates the mic patch — rebuild from the newest Actions run. If it IS listed, set it to Allow and retry.'
     : 'Mic permission denied — tap the lock icon by the address bar → Permissions → Microphone → Allow, then retry.';
+}
+async function qlMicPermFail() {
+  // Ask the platform which case we are in, instead of guessing.
+  let st = '';
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const r = await navigator.permissions.query({ name: 'microphone' });
+      st = (r && r.state) || '';
+    }
+  } catch (e) {}
+  if (st === 'denied') { qlSetStatus('Good news: this build HAS the mic permission — Android is just blocking it. Settings → Apps → Forge → Permissions → Microphone → Allow, then retry.', true); return; }
+  if (st === 'granted') { qlSetStatus('Mic permission is granted but the recorder failed — fully close Forge and retry. If it persists, tell me.', true); return; }
+  qlSetStatus(qlMicPermMsg(), true);
 }
 function qlMicCaptureBase() {
   const input = $('qlInput');
@@ -8032,7 +8045,7 @@ function qlStartNative() {
         try { localStorage.setItem(QL_VOICE_LS, 'whisper'); } catch (e) {}
         qlSetStatus('Switching to Forge transcription…');
         setTimeout(() => { qlMicErr = false; qlMicCancel = false; qlStartWhisper(); }, 120);
-      } else qlSetStatus(qlMicPermMsg(), true);
+      } else qlMicPermFail();
     }
     else if (c === 'no-speech') qlSetStatus('Heard nothing — tap the mic and speak.', true);
     else if (c === 'audio-capture') qlSetStatus('No microphone found on this device.', true);
@@ -8102,7 +8115,7 @@ function qlStartWhisper() {
     haptic('tap');
   }).catch(err => {
     const n = err && err.name;
-    if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') qlSetStatus(qlMicPermMsg(), true);
+    if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') qlMicPermFail();
     else if (n === 'NotFoundError' || n === 'DevicesNotFoundError') qlSetStatus('No microphone found on this device.', true);
     else qlSetStatus('Could not open the mic (' + (n || 'error') + ') — try again.', true);
   });
