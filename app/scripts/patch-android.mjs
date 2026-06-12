@@ -21,6 +21,15 @@ if (!m.includes('com.google.android.apps.healthdata')) {
     `$1\n    <queries>\n        <package android:name="com.google.android.apps.healthdata" />\n    </queries>`);
 }
 
+// 1b) Microphone — voice food logging (getUserMedia inside the Capacitor WebView).
+//     Capacitor's WebChromeClient auto-grants the page's mic request once the app
+//     itself holds RECORD_AUDIO, so these two lines are the entire native fix.
+//     Without them Android shows no prompt and no Settings toggle at all.
+if (!m.includes('android.permission.RECORD_AUDIO')) {
+  m = m.replace(/(<manifest[^>]*>)/,
+    `$1\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />`);
+}
+
 // 2) Permissions-rationale intent-filter inside MainActivity (Android 13 and below)
 if (!m.includes('androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE')) {
   m = m.replace(/(<activity[^>]*\.MainActivity[\s\S]*?)(<\/activity>)/,
@@ -45,7 +54,7 @@ if (!m.includes('ViewPermissionUsageActivity')) {
 }
 
 writeFileSync(manifestPath, m);
-console.log('[patch-android] AndroidManifest.xml patched for Health Connect');
+console.log('[patch-android] AndroidManifest.xml patched for Health Connect + microphone');
 
 // 4) Health Connect needs min SDK 26
 if (existsSync(varsPath)) {
