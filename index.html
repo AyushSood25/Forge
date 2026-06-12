@@ -3909,6 +3909,7 @@ function togglePassVis() {
  : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 }
 window.togglePassVis = togglePassVis;
+window.toggleAuthMode = toggleAuthMode;
 
 // Allow Enter key to submit
 document.addEventListener('keydown', e => {
@@ -6557,6 +6558,7 @@ function extractJSON(text) {
 /* Legacy entry point (the diet page input was removed in V9.13) — the Quick
    Log sheet is now the single food-logging surface. */
 async function logFood() { openQuickLog(); }
+window.logFood = logFood;
 
 function checkProteinAlert() {
  const log = getFoodLog(todayISO());
@@ -7895,6 +7897,11 @@ function fileToResizedBase64(file, maxDim) {
 const QL_LABELS = { preworkout: 'Pre-Workout', breakfast: 'Breakfast', lunch: 'Lunch', snack: 'Snack', bridge: 'Bridge Snack', dinner: 'Dinner' };
 let qlCat = 'breakfast';
 let qlBusy = false;
+let qlPending = null; // { items, via, provider, recipe?, frac, potW, servW, name, save } awaiting confirmation
+let qlRecipe = false; // true => input is a raw-ingredient list of one cooked dish
+function escapeHTML(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
 /* ----- core sheet helpers (restored v9.23 — lost in the v9.18 rewrite) ----- */
 function defaultQlCat() {
