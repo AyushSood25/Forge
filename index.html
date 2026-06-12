@@ -15,41 +15,41 @@
 <title>Forge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300..500&family=DM+Sans:ital,opsz,wght@0,9..40,300..500;1,9..40,300..400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300..500&family=DM+Sans:ital,opsz,wght@0,9..40,300..500;1,9..40,300..400&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
- --paper: #faf8f3;
- --paper-2: #f3efe6;
- --ink: #1a1816;
- --ink-soft: #45413c;
- --ink-mute: #8a857b;
- --line: #e8e2d4;
- --line-soft: #f0ebde;
- --accent: #c4633f;
- --accent-soft: #e8c4b0;
- --logo-ghost: #e3c4b7;
- --sage: #6b8e6b;
- --rose: #b87171;
- --gold: #b8923f;
+ --paper: #f6f4f0;
+ --paper-2: #efebe4;
+ --ink: #1a1714;
+ --ink-soft: #443f38;
+ --ink-mute: #8f867a;
+ --line: #e0dcd4;
+ --line-soft: #eae6de;
+ --accent: #d2593b;
+ --accent-soft: #f0cbb8;
+ --logo-ghost: #e8c4b4;
+ --sage: #6f8d6c;
+ --rose: #8a5a83;
+ --gold: #d9a441;
  --shadow: 0 1px 3px rgba(26, 24, 22, 0.04), 0 1px 2px rgba(26, 24, 22, 0.03);
  --shadow-lift: 0 8px 24px rgba(26, 24, 22, 0.06), 0 2px 6px rgba(26, 24, 22, 0.04);
 }
 
 /* ============= DARK MODE ============= */
 [data-theme="dark"] {
- --paper: #131210;
- --paper-2: #1e1c19;
- --ink: #f0ece3;
- --ink-soft: #c4bfb5;
- --ink-mute: #7a7570;
- --line: #2e2b26;
- --line-soft: #232018;
- --accent: #d4744f;
- --accent-soft: #4a2e1e;
- --logo-ghost: #6e4636;
- --sage: #7aa67a;
- --rose: #c48282;
- --gold: #c8a24f;
+ --paper: #141210;
+ --paper-2: #201d19;
+ --ink: #f1ece3;
+ --ink-soft: #c6c0b5;
+ --ink-mute: #7d7770;
+ --line: #322d27;
+ --line-soft: #25211b;
+ --accent: #e26d4a;
+ --accent-soft: #4f2c1d;
+ --logo-ghost: #7a4a38;
+ --sage: #84ab80;
+ --rose: #b07faa;
+ --gold: #e0b256;
  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
  --shadow-lift: 0 8px 24px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3);
  --nav-bg: rgba(19, 18, 16, 0.92);
@@ -63,7 +63,7 @@
 }
 .db-period-btn {
  flex: 1; padding: 8px 4px; border-radius: 20px; border: 1px solid var(--line);
- background: transparent; color: var(--ink-mute); font-size: 13px; font-family: 'DM Sans', sans-serif;
+ background: transparent; color: var(--ink-mute); font-size: 13px; font-family: 'Space Grotesk', sans-serif;
  cursor: pointer; transition: all 0.2s;
 }
 .db-period-btn.active {
@@ -267,7 +267,7 @@
 .fl-cat-tabs::-webkit-scrollbar { display: none; }
 .fl-cat-btn {
  padding: 7px 16px; border-radius: 20px; border: 1px solid var(--line);
- background: transparent; color: var(--ink-mute); font-size: 13px; font-family: 'DM Sans', sans-serif;
+ background: transparent; color: var(--ink-mute); font-size: 13px; font-family: 'Space Grotesk', sans-serif;
  cursor: pointer; white-space: nowrap; transition: all 0.2s;
 }
 .fl-cat-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
@@ -289,7 +289,7 @@
 }
 .fl-input {
  flex: 1; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
- padding: 12px 14px; font-size: 14px; color: var(--ink); font-family: 'DM Sans', sans-serif;
+ padding: 12px 14px; font-size: 14px; color: var(--ink); font-family: 'Space Grotesk', sans-serif;
  resize: none; outline: none; line-height: 1.5;
 }
 .fl-input:focus { border-color: var(--accent); }
@@ -298,7 +298,7 @@
  display: flex; align-items: center; gap: 6px; padding: 12px 18px;
  background: var(--accent); color: #fff; border: none; border-radius: 12px;
  font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap;
- font-family: 'DM Sans', sans-serif;
+ font-family: 'Space Grotesk', sans-serif;
 }
 .fl-log-btn:disabled { opacity: 0.5; cursor: default; }
 .fl-input-hint { font-size: 11px; color: var(--ink-mute); margin-top: 6px; text-align: center; }
@@ -328,7 +328,7 @@
 .fl-shake-log-btn {
  padding: 8px 16px; background: var(--accent); color: #fff; border: none;
  border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
- font-family: 'DM Sans', sans-serif;
+ font-family: 'Space Grotesk', sans-serif;
 }
 .fl-shake-log-btn:active { opacity: 0.85; }
 
@@ -559,7 +559,7 @@
  letter-spacing: 0.04em;
  -webkit-appearance: none;
 }
-.chat-key-input::placeholder { color: var(--ink-mute); font-family: 'DM Sans', sans-serif; letter-spacing: 0; }
+.chat-key-input::placeholder { color: var(--ink-mute); font-family: 'Space Grotesk', sans-serif; letter-spacing: 0; }
 .chat-save-btn {
  width: 100%;
  padding: 14px;
@@ -579,7 +579,7 @@
 html, body {
  background: var(--paper);
  color: var(--ink);
- font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+ font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
  font-weight: 400;
  line-height: 1.5;
  -webkit-font-smoothing: antialiased;
@@ -660,6 +660,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  .section { animation: none; }
  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
  html, body, .nav, .section, .chart-wrap, .modal, .chat-drawer, .ql-sheet { transition: none; }
+ .section.section-anim, [data-stagger] > * { animation: none !important; }
 }
 .auth-tag {
  color: var(--ink-mute);
@@ -869,6 +870,25 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 }
 #dashboard.section { padding-top: 16px; }
 .section.active { display: block; }
+/* Replayable on every nav switch (setSection re-adds .section-anim after a reflow) */
+.section.section-anim { animation: sectionEnter 0.32s cubic-bezier(0.22,0.9,0.32,1) both; }
+@keyframes sectionEnter {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: none; }
+}
+/* Staggered cascade — applied to direct children of a [data-stagger] container */
+[data-stagger] > * { animation: staggerRise 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+[data-stagger] > *:nth-child(1){animation-delay:.02s}
+[data-stagger] > *:nth-child(2){animation-delay:.07s}
+[data-stagger] > *:nth-child(3){animation-delay:.12s}
+[data-stagger] > *:nth-child(4){animation-delay:.17s}
+[data-stagger] > *:nth-child(5){animation-delay:.22s}
+[data-stagger] > *:nth-child(6){animation-delay:.27s}
+[data-stagger] > *:nth-child(n+7){animation-delay:.3s}
+@keyframes staggerRise {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
 @keyframes fadeIn {
  from { opacity: 0; transform: translateY(8px); }
  to { opacity: 1; transform: translateY(0); }
@@ -2465,7 +2485,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 </nav>
 
 <!-- DASHBOARD -->
-<section class="section active" id="dashboard">
+<section class="section active" id="dashboard" data-stagger>
  <div class="section-title">Dashboard</div>
 
  <!-- Summary Period Selector -->
@@ -4097,7 +4117,20 @@ function setSection(target) {
  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
  const sec = $(target);
- if (sec) sec.classList.add('active');
+ if (sec) {
+   sec.classList.add('active');
+   // replay the entrance animation on every switch (not just first mount)
+   sec.classList.remove('section-anim');
+   void sec.offsetWidth;            // force reflow so the animation restarts
+   sec.classList.add('section-anim');
+   // replay the child cascade for staggered sections (dashboard)
+   if (sec.hasAttribute('data-stagger')) {
+     const kids = sec.children;
+     for (let i = 0; i < kids.length; i++) { kids[i].style.animation = 'none'; }
+     void sec.offsetWidth;
+     for (let i = 0; i < kids.length; i++) { kids[i].style.animation = ''; }
+   }
+ }
  const pill = document.querySelector(`.pill[data-target="${target}"]`);
  if (pill) {
  pill.classList.add('active');
