@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FORGE BUILD: V9.20 (voice logging — tap-to-talk mic with live transcription + listening animation, incremental takes append with commas for log-while-cooking, spoken units (tablespoons/kg) in parser; camera removed; on V9.19 recipe mode + V9.18 engine v2; web-only, no rebuild) -->
+<!-- FORGE BUILD: V9.21 (sign-in watchdog — hung Firebase auth names itself after 15s with a reachability probe; auth screen shows build + shell tag; on V9.20 voice logging; web-only, no rebuild) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2426,6 +2426,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <button class="btn-primary" id="signInBtn" onclick="handleSignIn()" style="min-height:52px;">Sign in</button>
  <button class="auth-toggle" id="authToggleBtn" onclick="toggleAuthMode()">Don't have an account? Create one</button>
  <div class="auth-foot">YOUR DATA SYNCS PRIVATELY · NEVER SHARED</div>
+ <div class="auth-foot" id="authVer" style="opacity:0.55"></div>
  </div>
 </div>
 
@@ -3297,7 +3298,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="s-meta">Until next time</div>
  </button>
 
- <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.20</span></div>
+ <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.21</span></div>
 
  </div>
 </div>
@@ -3829,14 +3830,37 @@ async function handleSignIn() {
  btn.disabled = true;
  btn.textContent = authMode === 'signin' ? 'Signing in…' : 'Creating account…';
 
+ // Watchdog: if Firebase neither resolves nor rejects, say WHERE it is stuck
+ // instead of freezing on "Signing in…" forever.
+ const hang = setTimeout(async () => {
+ let reach = 'unreachable';
+ try {
+ const c = new AbortController();
+ const t = setTimeout(() => c.abort(), 6000);
+ await fetch('https://firestore.googleapis.com/', { mode: 'no-cors', cache: 'no-store', signal: c.signal });
+ clearTimeout(t);
+ reach = 'reachable';
+ } catch (e) {}
+ const offline = (typeof navigator !== 'undefined' && navigator.onLine === false) ? ' Device reports OFFLINE.' : '';
+ errEl.textContent = 'Firebase did not respond in 15s. Google servers are ' + reach + ' from inside this app.' + offline
+ + (reach === 'reachable'
+ ? ' Auth specifically is stuck — check the phone\u2019s date & time are set to automatic, then retry.'
+ : ' The app shell cannot reach Google — check internet / VPN / private-DNS, or try in Chrome.');
+ btn.disabled = false;
+ btn.textContent = originalText;
+ }, 15000);
+
  try {
  if (authMode === 'signin') {
  await fb.signInWithEmailAndPassword(fb.auth, email, password);
  } else {
  await fb.createUserWithEmailAndPassword(fb.auth, email, password);
  }
+ clearTimeout(hang);
+ btn.textContent = 'Signed in \u2713';
  // onAuthStateChanged handles the rest
  } catch (err) {
+ clearTimeout(hang);
  btn.disabled = false;
  btn.textContent = originalText;
  errEl.textContent = getAuthErrorMessage(err.code);
@@ -5680,7 +5704,7 @@ async function logShake() {
  toast(`Protein shake logged — ${scoops * 25}g protein added`);
 }
 
-try{window.FORGE_BUILD='v9.20';console.log('%c[Forge] build v9.20 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');}catch(e){}
+try{window.FORGE_BUILD='v9.21';console.log('%c[Forge] build v9.21 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');var _av=document.getElementById('authVer');if(_av)_av.textContent='build v9.21 \u00b7 '+(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'app shell':'browser');}catch(e){}
 /* ===== FORGE FOOD DB + ENGINE (injected; LLM parses, JS computes) ===== */
 /* ============================================================
    FORGE FOOD DATABASE  (FOOD_DB)
