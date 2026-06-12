@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FORGE BUILD: V9.22 (auth unblock — observer attaches before persistence (which can wedge in WebViews and used to block it), signed-in flow refactored to enterApp() with silent-observer fallback + session poll; on V9.21 watchdog; web-only, no rebuild) -->
+<!-- FORGE BUILD: V9.23 (repair — restored 9 Quick Log core helpers lost in the v9.18 rewrite (FAB works again); auth persistence pinned to localStorage in the app shell so sessions survive restarts; global error tripwire + handler self-check; web-only, no rebuild) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -3298,7 +3298,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="s-meta">Until next time</div>
  </button>
 
- <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.22</span></div>
+ <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.23</span></div>
 
  </div>
 </div>
@@ -3427,7 +3427,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 <!-- FIREBASE SDK (modular) -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, initializeAuth, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, addDoc, deleteDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -3441,7 +3441,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const _nativeShell = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+let auth;
+try {
+  // WebView IndexedDB is unreliable here (wedges silently); localStorage is proven
+  // in this shell, so pin auth persistence to it on native. Browser keeps defaults.
+  auth = _nativeShell ? initializeAuth(app, { persistence: browserLocalPersistence }) : getAuth(app);
+} catch (e) { auth = getAuth(app); }
+console.log('[Forge] auth persistence:', _nativeShell ? 'localStorage (app shell)' : 'default (browser)');
 const db = getFirestore(app);
 const storage = getStorage(app);
 
@@ -5727,7 +5734,7 @@ async function logShake() {
  toast(`Protein shake logged — ${scoops * 25}g protein added`);
 }
 
-try{window.FORGE_BUILD='v9.22';console.log('%c[Forge] build v9.22 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');var _av=document.getElementById('authVer');if(_av)_av.textContent='build v9.22 \u00b7 '+(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'app shell':'browser');}catch(e){}
+try{window.FORGE_BUILD='v9.23';console.log('%c[Forge] build v9.23 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');var _av=document.getElementById('authVer');if(_av)_av.textContent='build v9.23 \u00b7 '+(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'app shell':'browser');}catch(e){}
 /* ===== FORGE FOOD DB + ENGINE (injected; LLM parses, JS computes) ===== */
 /* ============================================================
    FORGE FOOD DATABASE  (FOOD_DB)
@@ -7887,6 +7894,52 @@ function fileToResizedBase64(file, maxDim) {
    so nothing wrong ever lands in the log without your OK. */
 const QL_LABELS = { preworkout: 'Pre-Workout', breakfast: 'Breakfast', lunch: 'Lunch', snack: 'Snack', bridge: 'Bridge Snack', dinner: 'Dinner' };
 let qlCat = 'breakfast';
+let qlBusy = false;
+
+/* ----- core sheet helpers (restored v9.23 — lost in the v9.18 rewrite) ----- */
+function defaultQlCat() {
+  const h = new Date().getHours();
+  if (h < 10) return 'breakfast';
+  if (h < 14) return 'lunch';
+  if (h < 17) return 'snack';
+  if (h < 20) return 'bridge';
+  return 'dinner';
+}
+function openQuickLog() {
+  if (!qlPending) {
+    qlCat = defaultQlCat();
+    qlRecipe = false;
+    qlApplyMode();
+    qlSetStatus('');
+  }
+  document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === qlCat));
+  $('qlOverlay').classList.add('open');
+  $('qlSheet').classList.add('open');
+  if (qlPending) qlRerender(); // a review in progress survives reopening
+  haptic('open');
+  setTimeout(() => { const i = $('qlInput'); if (i && !qlPending) i.focus(); }, 260);
+}
+function closeQuickLog() {
+  qlStopMic();
+  $('qlOverlay').classList.remove('open');
+  $('qlSheet').classList.remove('open');
+}
+function qlSetCat(cat) {
+  qlCat = cat;
+  document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  if (qlPending) qlRerender(); // confirm button label follows the category
+  haptic('tap');
+}
+function qlKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitQuickLog(); }
+}
+function qlResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
+function qlSetStatus(msg, isErr) {
+  const s = $('qlStatus'); if (!s) return;
+  s.textContent = msg || '';
+  s.classList.toggle('err', !!isErr);
+}
+
 let qlMicActive = false;   // a take is currently recording / listening
 let qlRec = null;          // native SpeechRecognition (Chrome) — engine A
 let qlMedia = null;        // MediaRecorder (Whisper upload) — engine B
@@ -8362,6 +8415,27 @@ window.qlrSetName = qlrSetName;
 window.qlrSetPotW = qlrSetPotW;
 window.qlrSetServW = qlrSetServW;
 window.qlrSetSave = qlrSetSave;
+
+/* ----- tripwire (v9.23): no silent breakage, ever again ----- */
+window.__errToasts = 0;
+window.addEventListener('error', ev => {
+  try { if (window.__errToasts < 3) { window.__errToasts++; toast('\u26a0 ' + String((ev && ev.message) || 'Script error').slice(0, 90)); } } catch (_) {}
+});
+window.addEventListener('unhandledrejection', ev => {
+  try {
+    const r = ev && ev.reason; const m = (r && (r.message || r.code)) || String(r);
+    console.error('Unhandled rejection:', r);
+    if (window.__errToasts < 3) { window.__errToasts++; toast('\u26a0 ' + String(m).slice(0, 90)); }
+  } catch (_) {}
+});
+(function selfCheck() {
+  const need = ['openQuickLog','closeQuickLog','qlSetCat','qlKeydown','qlResize','submitQuickLog','qlToggleMic','qlToggleRecipe','qlConfirmReview','qlDiscardReview','handleSignIn','toggleAuthMode','togglePassVis','logFood'];
+  const missing = need.filter(n => typeof window[n] !== 'function');
+  if (missing.length) {
+    console.error('[Forge] missing handlers:', missing);
+    setTimeout(() => toast('\u26a0 Broken handlers: ' + missing.join(', ')), 1200);
+  }
+})();
 
 /* ---------- Nutrition trend chart dialog ---------- */
 let nxMetric = 'cal';
