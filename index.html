@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FORGE BUILD: V9.21 (sign-in watchdog — hung Firebase auth names itself after 15s with a reachability probe; auth screen shows build + shell tag; on V9.20 voice logging; web-only, no rebuild) -->
+<!-- FORGE BUILD: V9.22 (auth unblock — observer attaches before persistence (which can wedge in WebViews and used to block it), signed-in flow refactored to enterApp() with silent-observer fallback + session poll; on V9.21 watchdog; web-only, no rebuild) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -3298,7 +3298,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="s-meta">Until next time</div>
  </button>
 
- <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.21</span></div>
+ <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.22</span></div>
 
  </div>
 </div>
@@ -3743,18 +3743,10 @@ function showAuthDebug(msg) {
  toast(msg.split('\n')[0]);
 }
 
-async function initApp() {
- await waitForFirebase();
- const fb = window.__fb;
-
- try {
- await fb.setPersistence(fb.auth, fb.browserLocalPersistence);
- } catch (e) {
- console.error('Persistence error:', e);
- }
-
- fb.onAuthStateChanged(fb.auth, async (u) => {
- if (u) {
+let appEntered = false;
+async function enterApp(u) {
+ if (appEntered) return; // observer + manual path may both fire
+ appEntered = true;
  user = u;
  $('authGate').style.display = 'none';
  $('loader').style.display = 'flex';
@@ -3773,11 +3765,28 @@ async function initApp() {
  initDashboard();
  } catch (e) {
  console.error('App init failed:', e);
+ appEntered = false; // allow a retry
  $('loader').style.display = 'none';
  $('authGate').style.display = 'flex';
  showAuthDebug('Signed in but data load failed:\n\n' + (e.code || '') + ' ' + (e.message || e));
  }
- } else {
+}
+
+async function initApp() {
+ await waitForFirebase();
+ const fb = window.__fb;
+
+ // Persistence is fire-and-forget: in some WebViews setPersistence neither
+ // resolves nor rejects (wedged IndexedDB). Awaiting it here used to block
+ // forever, so the auth observer below was never attached — sign-in would
+ // succeed but the app never opened.
+ try { fb.setPersistence(fb.auth, fb.browserLocalPersistence).catch(e => console.error('Persistence error:', e)); }
+ catch (e) { console.error('Persistence error:', e); }
+
+ fb.onAuthStateChanged(fb.auth, async (u) => {
+ if (u) { enterApp(u); }
+ else {
+ appEntered = false;
  user = null;
  teardownListeners();
  $('app').style.display = 'none';
@@ -3785,6 +3794,15 @@ async function initApp() {
  $('authGate').style.display = 'flex';
  }
  });
+
+ // Returning session whose observer stays silent: poll briefly, enter manually.
+ let _authPollTries = 0;
+ const _authPoll = setInterval(() => {
+ _authPollTries++;
+ const cu = fb.auth.currentUser;
+ if (cu && !appEntered) { console.warn('[auth] restored session via poll'); clearInterval(_authPoll); enterApp(cu); }
+ else if (appEntered || _authPollTries > 10) clearInterval(_authPoll);
+ }, 400);
 }
 
 let authMode = 'signin'; // 'signin' | 'signup'
@@ -3858,7 +3876,12 @@ async function handleSignIn() {
  }
  clearTimeout(hang);
  btn.textContent = 'Signed in \u2713';
- // onAuthStateChanged handles the rest
+ // Normally onAuthStateChanged takes it from here. If the observer is mute
+ // (wedged WebView persistence), enter the app directly.
+ setTimeout(() => {
+ const cu = fb.auth.currentUser;
+ if (cu && !appEntered) { console.warn('[auth] observer silent \u2014 entering app directly'); enterApp(cu); }
+ }, 1500);
  } catch (err) {
  clearTimeout(hang);
  btn.disabled = false;
@@ -5704,7 +5727,7 @@ async function logShake() {
  toast(`Protein shake logged — ${scoops * 25}g protein added`);
 }
 
-try{window.FORGE_BUILD='v9.21';console.log('%c[Forge] build v9.21 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');var _av=document.getElementById('authVer');if(_av)_av.textContent='build v9.21 \u00b7 '+(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'app shell':'browser');}catch(e){}
+try{window.FORGE_BUILD='v9.22';console.log('%c[Forge] build v9.22 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');var _av=document.getElementById('authVer');if(_av)_av.textContent='build v9.22 \u00b7 '+(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'app shell':'browser');}catch(e){}
 /* ===== FORGE FOOD DB + ENGINE (injected; LLM parses, JS computes) ===== */
 /* ============================================================
    FORGE FOOD DATABASE  (FOOD_DB)
