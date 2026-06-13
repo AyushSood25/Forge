@@ -2174,9 +2174,9 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  transition: all 0.15s; white-space: nowrap;
 }
 .ql-chip.active { background: var(--sage); border-color: var(--sage); color: #fff; }
-.ql-input-row { display:flex; align-items:flex-end; gap: 8px; margin-top: 12px; }
+.ql-input-row { display:flex; flex-wrap: nowrap; align-items:flex-end; gap: 8px; margin-top: 12px; }
 .ql-input {
- flex:1; border: 1px solid var(--line); background: var(--paper-2);
+ flex:1; min-width: 0; border: 1px solid var(--line); background: var(--paper-2);
  border-radius: 16px; padding: 11px 14px; font-family: inherit; font-size: 14px;
  color: var(--ink); resize: none; max-height: 110px; line-height: 1.4;
 }
@@ -2207,6 +2207,14 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 .ql-send svg { width: 19px; height: 19px; fill: #fff; }
 .ql-send:active, .ql-mic:active { transform: scale(0.9); }
 .ql-send:disabled { opacity: 0.5; }
+/* small phones: keep mic · input · send on ONE line, comfortably */
+@media (max-width: 400px) {
+ .ql-input-row { gap: 7px; }
+ .ql-mic, .ql-send { width: 38px; height: 38px; }
+ .ql-mic svg { width: 18px; height: 18px; }
+ .ql-send svg { width: 17px; height: 17px; }
+ .ql-input { padding: 10px 13px; font-size: 13.5px; border-radius: 14px; }
+}
 .ql-status { font-size: 12.5px; color: var(--sage); margin-top: 12px; text-align:center; min-height: 16px; }
 .ql-status.err { color: var(--rose); }
 .ql-hint { font-size: 11px; color: var(--ink-mute); margin-top: 8px; text-align:center; }
@@ -3397,7 +3405,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <svg class="mic-idle" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7" fill="none" stroke-width="1.8" stroke-linecap="round"/></svg>
  <svg class="mic-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.5"/></svg>
  </button>
- <textarea class="ql-input" id="qlInput" rows="1" placeholder="e.g. 2 rotis, 100g paneer, 1 banana" onkeydown="qlKeydown(event)" oninput="qlResize(this)"></textarea>
+ <textarea class="ql-input" id="qlInput" rows="1" placeholder="e.g. 2 rotis, paneer 100g" onkeydown="qlKeydown(event)" oninput="qlResize(this)"></textarea>
  <button class="ql-send" id="qlSend" onclick="submitQuickLog()" aria-label="Log">
  <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
  </button>
