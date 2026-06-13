@@ -2165,6 +2165,8 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 .ql-close { background:none; border:none; font-size:19px; color:var(--ink-mute); cursor:pointer; padding:4px; line-height:1; }
 .ql-cat-chips { display:flex; gap:7px; overflow-x:auto; padding: 14px 0 4px; -webkit-overflow-scrolling: touch; scrollbar-width:none; }
 .ql-cat-chips::-webkit-scrollbar { display:none; }
+.ql-day-toggle { display:flex; align-items:center; gap:7px; padding: 12px 0 0; }
+.ql-day-label { font-size: 11px; color: var(--ink-mute); margin-right: 1px; }
 .ql-chip {
  flex-shrink:0; padding: 7px 13px; border-radius: 99px;
  border: 1px solid var(--line); background: var(--paper-2);
@@ -3371,8 +3373,13 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 <div class="ql-sheet" id="qlSheet">
  <div class="ql-grab"></div>
  <div class="ql-head">
- <div class="ql-title">Quick Log<small>Speak or type — confirm, then it logs to today</small></div>
+ <div class="ql-title">Quick Log<small id="qlSubtitle">Speak or type — confirm, then it logs to today</small></div>
  <button class="ql-close" onclick="closeQuickLog()">✕</button>
+ </div>
+ <div class="ql-day-toggle" id="qlDayToggle">
+ <span class="ql-day-label">Logging to</span>
+ <button class="ql-chip active" data-day="today" onclick="qlSetDay('today')">Today</button>
+ <button class="ql-chip" data-day="tomorrow" onclick="qlSetDay('tomorrow')">Tomorrow</button>
  </div>
  <div class="ql-cat-chips" id="qlChips">
  <button class="ql-chip" data-cat="preworkout" onclick="qlSetCat('preworkout')">Pre-Workout</button>
@@ -3717,6 +3724,16 @@ function fmtDateLong(iso) {
 }
 function todayISO() {
  const d = new Date();
+ const yyyy = d.getFullYear();
+ const mm = String(d.getMonth()+1).padStart(2,'0');
+ const dd = String(d.getDate()).padStart(2,'0');
+ return `${yyyy}-${mm}-${dd}`;
+}
+// One day ahead — local date (same padding approach as todayISO, never toISOString).
+// Used as the furthest date food can be logged to (e.g. weigh tonight's overnight-oats for tomorrow).
+function tomorrowISO() {
+ const d = new Date();
+ d.setDate(d.getDate() + 1);
  const yyyy = d.getFullYear();
  const mm = String(d.getMonth()+1).padStart(2,'0');
  const dd = String(d.getDate()).padStart(2,'0');
@@ -5544,8 +5561,7 @@ function shiftFoodDate(delta) {
  d.setDate(d.getDate() + delta);
  const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd2 = String(d.getDate()).padStart(2,'0');
  const newDate = `${yyyy}-${mm}-${dd2}`;
- const today = todayISO();
- if (newDate > today) return;
+ if (newDate > tomorrowISO()) return; // can log up to tomorrow (overnight prep), no further
  foodLogDate = newDate;
  updateFoodDateUI();
  renderFoodLog();
@@ -5553,17 +5569,19 @@ function shiftFoodDate(delta) {
 
 function updateFoodDateUI() {
  const today = todayISO();
+ const tomorrow = tomorrowISO();
  const label = $('flDateLabel');
  const nextBtn = $('flDateNext');
  if (!label) return;
  if (foodLogDate === today) {
  label.textContent = 'Today';
- if (nextBtn) nextBtn.disabled = true;
+ } else if (foodLogDate === tomorrow) {
+ label.textContent = 'Tomorrow';
  } else {
  const d = new Date(foodLogDate + 'T00:00:00');
  label.textContent = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
- if (nextBtn) nextBtn.disabled = false;
  }
+ if (nextBtn) nextBtn.disabled = foodLogDate === tomorrow;
 }
 
 function setFoodCat(cat) {
@@ -7929,6 +7947,7 @@ function fileToResizedBase64(file, maxDim) {
    so nothing wrong ever lands in the log without your OK. */
 const QL_LABELS = { preworkout: 'Pre-Workout', breakfast: 'Breakfast', lunch: 'Lunch', snack: 'Snack', bridge: 'Bridge Snack', dinner: 'Dinner' };
 let qlCat = 'breakfast';
+let qlDay = 'today'; // 'today' | 'tomorrow' — which date Quick Log commits to
 let qlBusy = false;
 let qlPending = null; // { items, via, provider, recipe?, frac, potW, servW, name, save } awaiting confirmation
 let qlRecipe = false; // true => input is a raw-ingredient list of one cooked dish
@@ -7948,11 +7967,13 @@ function defaultQlCat() {
 function openQuickLog() {
   if (!qlPending) {
     qlCat = defaultQlCat();
+    qlDay = 'today';
     qlRecipe = false;
     qlApplyMode();
     qlSetStatus('');
   }
   document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === qlCat));
+  qlApplyDay();
   $('qlOverlay').classList.add('open');
   $('qlSheet').classList.add('open');
   if (qlPending) qlRerender(); // a review in progress survives reopening
@@ -7968,6 +7989,22 @@ function qlSetCat(cat) {
   qlCat = cat;
   document.querySelectorAll('#qlChips .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
   if (qlPending) qlRerender(); // confirm button label follows the category
+  haptic('tap');
+}
+// ---- which date Quick Log writes to (today by default; tomorrow for overnight prep) ----
+function qlTargetDate() { return qlDay === 'tomorrow' ? tomorrowISO() : todayISO(); }
+function qlDayLabel() { return qlDay === 'tomorrow' ? ' · Tomorrow' : ''; }
+function qlApplyDay() {
+  document.querySelectorAll('#qlDayToggle .ql-chip').forEach(b => b.classList.toggle('active', b.dataset.day === qlDay));
+  const sub = $('qlSubtitle');
+  if (sub) sub.textContent = qlDay === 'tomorrow'
+    ? 'Speak or type — confirm, then it logs to tomorrow'
+    : 'Speak or type — confirm, then it logs to today';
+}
+function qlSetDay(day) {
+  qlDay = (day === 'tomorrow') ? 'tomorrow' : 'today';
+  qlApplyDay();
+  if (qlPending) qlRerender(); // confirm button label follows the day
   haptic('tap');
 }
 function qlKeydown(e) {
@@ -8213,13 +8250,14 @@ async function submitQuickLog() {
 }
 
 async function qlCommit(items) {
-  const date = todayISO();
+  const date = qlTargetDate();
+  const isToday = date === todayISO();
   await commitFoodItems(items, qlCat, date);
   haptic('success');
   if (foodLogDate === date) { renderFoodTotals(); renderFoodItems(); }
-  if (activeSection === 'dashboard') renderDashboard();
-  checkProteinAlert();
-  const label = QL_LABELS[qlCat] || qlCat;
+  if (isToday && activeSection === 'dashboard') renderDashboard();
+  if (isToday) checkProteinAlert();
+  const label = (QL_LABELS[qlCat] || qlCat) + qlDayLabel();
   const kcal = Math.round(items.reduce((s, i) => s + (i.calories || 0), 0));
   qlSetStatus('Logged ' + items.length + ' item' + (items.length > 1 ? 's' : '') + ' · ' + kcal + ' kcal to ' + label + '.');
   const input = $('qlInput'); if (input) { input.value = ''; qlResize(input); }
@@ -8257,7 +8295,7 @@ function renderQlReview() {
     + '<div class="qlr-total">Total: ' + kcal + ' kcal · ' + pro + 'g protein</div>'
     + '<div class="qlr-actions">'
     + '<button class="qlr-discard" onclick="qlDiscardReview()">Discard</button>'
-    + '<button class="qlr-confirm" onclick="qlConfirmReview()">Log to ' + escapeHTML(QL_LABELS[qlCat] || qlCat) + '</button>'
+    + '<button class="qlr-confirm" onclick="qlConfirmReview()">Log to ' + escapeHTML((QL_LABELS[qlCat] || qlCat) + qlDayLabel()) + '</button>'
     + '</div>';
   wrap.classList.add('show');
 }
@@ -8394,7 +8432,7 @@ function renderQlRecipeReview() {
     + '<label class="qlr-save"><input type="checkbox" id="qlrSaveCb"' + (P.save ? ' checked' : '') + ' onchange="qlrSetSave(this)" /> Save as my food (one-line exact logging next time)</label>'
     + '<div class="qlr-actions">'
     + '<button class="qlr-discard" onclick="qlDiscardReview()">Discard</button>'
-    + '<button class="qlr-confirm" onclick="qlConfirmReview()">Log my share to ' + escapeHTML(QL_LABELS[qlCat] || qlCat) + '</button>'
+    + '<button class="qlr-confirm" onclick="qlConfirmReview()">Log my share to ' + escapeHTML((QL_LABELS[qlCat] || qlCat) + qlDayLabel()) + '</button>'
     + '</div>';
   wrap.classList.add('show');
 }
@@ -8454,6 +8492,7 @@ async function saveRecipeAsFood(name, t, P) {
 window.openQuickLog = openQuickLog;
 window.closeQuickLog = closeQuickLog;
 window.qlSetCat = qlSetCat;
+window.qlSetDay = qlSetDay;
 window.qlKeydown = qlKeydown;
 window.qlResize = qlResize;
 window.qlToggleMic = qlToggleMic;
