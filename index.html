@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- FORGE BUILD: V9.23 (repair — restored 9 Quick Log core helpers lost in the v9.18 rewrite (FAB works again); auth persistence pinned to localStorage in the app shell so sessions survive restarts; global error tripwire + handler self-check; web-only, no rebuild) -->
+<!-- FORGE BUILD: V9.25 (Meals: "Diet" renamed to Meals; suggestions + meal-plan templates collapsed behind tap-to-open subsections; new Meal Prep feature — batch-cook once, log portions across the week with count or weight portioning, synced; new Charcoal-Gold-Burgundy palette, night default + day toggle; web-only, no rebuild) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#faf8f3">
+<meta name="theme-color" content="#f6f4ef">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Forge">
@@ -18,43 +18,43 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300..500&family=DM+Sans:ital,opsz,wght@0,9..40,300..500;1,9..40,300..400&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
- --paper: #f6f4f0;
- --paper-2: #efebe4;
- --ink: #1a1714;
- --ink-soft: #443f38;
- --ink-mute: #8f867a;
- --line: #e0dcd4;
- --line-soft: #eae6de;
- --accent: #d2593b;
- --accent-soft: #f0cbb8;
- --logo-ghost: #e8c4b4;
- --sage: #6f8d6c;
- --rose: #8a5a83;
- --gold: #d9a441;
- --shadow: 0 1px 3px rgba(26, 24, 22, 0.04), 0 1px 2px rgba(26, 24, 22, 0.03);
- --shadow-lift: 0 8px 24px rgba(26, 24, 22, 0.06), 0 2px 6px rgba(26, 24, 22, 0.04);
+ --paper: #f6f4ef;
+ --paper-2: #ece6dd;
+ --ink: #1c1a18;
+ --ink-soft: #4a443c;
+ --ink-mute: #8d8579;
+ --line: #e2dcd1;
+ --line-soft: #ece7dd;
+ --accent: #a87f2c;
+ --accent-soft: #ecdcb9;
+ --logo-ghost: #ddc89a;
+ --sage: #8c333f;
+ --rose: #bd6a64;
+ --gold: #b8923f;
+ --shadow: 0 1px 3px rgba(28, 24, 18, 0.04), 0 1px 2px rgba(28, 24, 18, 0.03);
+ --shadow-lift: 0 8px 24px rgba(28, 24, 18, 0.06), 0 2px 6px rgba(28, 24, 18, 0.04);
 }
 
 /* ============= DARK MODE ============= */
 [data-theme="dark"] {
- --paper: #141210;
- --paper-2: #201d19;
- --ink: #f1ece3;
- --ink-soft: #c6c0b5;
- --ink-mute: #7d7770;
- --line: #322d27;
- --line-soft: #25211b;
- --accent: #e26d4a;
- --accent-soft: #4f2c1d;
- --logo-ghost: #7a4a38;
- --sage: #84ab80;
- --rose: #b07faa;
- --gold: #e0b256;
+ --paper: #18171a;
+ --paper-2: #232026;
+ --ink: #f4efe6;
+ --ink-soft: #cdc6ba;
+ --ink-mute: #8a837a;
+ --line: #322e38;
+ --line-soft: #262330;
+ --accent: #f0b94e;
+ --accent-soft: #423619;
+ --logo-ghost: #6e5728;
+ --sage: #d35d6d;
+ --rose: #e58a7f;
+ --gold: #f2d281;
  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
  --shadow-lift: 0 8px 24px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3);
- --nav-bg: rgba(19, 18, 16, 0.92);
+ --nav-bg: rgba(24, 23, 26, 0.92);
 }
-[data-theme="dark"] meta[name="theme-color"] { content: "#131210"; }
+[data-theme="dark"] meta[name="theme-color"] { content: "#18171a"; }
 
 
 /* ============= DASHBOARD ============= */
@@ -1843,6 +1843,60 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 }
 .modal-input:focus, .modal-textarea:focus { border-color: var(--ink); }
 .modal-textarea { resize: vertical; min-height: 60px; }
+
+/* ===== v9.25: text color that stays legible on the gold accent in both themes ===== */
+:root { --on-accent: #241a0c; }
+[data-theme="dark"] { --on-accent: #191410; }
+
+/* ===== Meals: collapsible subsections ===== */
+.meal-sub-head{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:14px; cursor:pointer; color:var(--ink); font-family:inherit; }
+.meal-sub-title{ font-size:13px; font-weight:500; letter-spacing:0.01em; }
+.meal-sub-chev{ width:18px; height:18px; stroke:var(--ink-mute); transition:transform 0.25s ease; flex-shrink:0; }
+.meal-sub-head.open .meal-sub-chev{ transform:rotate(180deg); }
+.meal-sub-body{ margin-top:10px; }
+.sugg-regen-row{ display:flex; justify-content:flex-end; margin-bottom:10px; }
+
+/* ===== Meal Prep shelf + cards ===== */
+.prep-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:20px 0 12px; }
+.prep-head-title{ font-size:11px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-mute); }
+.prep-add{ display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:var(--on-accent); border:none; border-radius:99px; padding:8px 14px; font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer; }
+.prep-add svg{ width:15px; height:15px; stroke:var(--on-accent); fill:none; stroke-width:2.6; }
+.prep-empty{ font-size:12.5px; color:var(--ink-mute); background:var(--paper-2); border:1px dashed var(--line); border-radius:14px; padding:16px; text-align:center; line-height:1.5; }
+.prep-card{ background:var(--paper-2); border:1px solid var(--line); border-radius:16px; padding:15px 16px; margin-bottom:11px; }
+.prep-card.done{ opacity:0.6; }
+.prep-c-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.prep-c-name{ font-size:15px; font-weight:500; color:var(--ink); letter-spacing:-0.01em; }
+.prep-c-meta{ font-size:11.5px; color:var(--ink-mute); margin-top:2px; }
+.prep-tag{ font-size:10.5px; font-weight:500; padding:3px 9px; border-radius:99px; background:var(--accent-soft); color:var(--ink-soft); white-space:nowrap; }
+.prep-c-macros{ font-size:12.5px; color:var(--ink-soft); margin:11px 0 13px; }
+.prep-c-macros b{ font-weight:500; color:var(--ink); }
+.prep-c-left{ color:var(--sage); font-weight:500; }
+.prep-c-actions{ display:flex; gap:8px; align-items:center; }
+.prep-log-btn{ flex:1; background:var(--accent); color:var(--on-accent); border:none; border-radius:11px; padding:10px 0; font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer; text-align:center; }
+.prep-log-btn:disabled{ background:var(--ink-mute); opacity:0.5; cursor:not-allowed; color:var(--paper); }
+.prep-icon-btn{ background:transparent; border:1px solid var(--line); border-radius:11px; padding:9px 11px; cursor:pointer; color:var(--ink-mute); font-family:inherit; font-size:12px; display:inline-flex; align-items:center; }
+.prep-icon-btn svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; }
+
+/* prep modal controls */
+.prep-seg{ display:flex; gap:8px; }
+.prep-seg button{ flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--line); background:var(--paper-2); color:var(--ink-soft); font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer; }
+.prep-seg button.on{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+.prep-macro-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.prep-mini-label{ font-size:10.5px; color:var(--ink-mute); margin-bottom:5px; letter-spacing:0.04em; }
+.prep-est-btn{ width:100%; background:var(--paper-2); border:1px solid var(--line); border-radius:10px; padding:11px 0; font-size:12.5px; font-weight:500; color:var(--ink); font-family:inherit; cursor:pointer; }
+.prep-est-btn:disabled{ opacity:0.6; cursor:default; }
+.prep-status{ font-size:11.5px; color:var(--ink-mute); margin-top:8px; min-height:14px; }
+.prep-perserv{ font-size:12.5px; color:var(--sage); font-weight:500; margin-top:10px; min-height:16px; }
+.prep-slot-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.prep-slot{ padding:9px 0; border-radius:10px; border:1px solid var(--line); background:var(--paper-2); color:var(--ink-soft); font-size:11.5px; font-weight:500; font-family:inherit; cursor:pointer; text-align:center; }
+.prep-slot.on{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+.prep-qty-row{ display:flex; align-items:center; gap:12px; justify-content:center; }
+.prep-step{ width:40px; height:40px; border-radius:10px; border:1px solid var(--line); background:var(--paper-2); color:var(--ink); font-size:21px; font-family:inherit; cursor:pointer; line-height:1; }
+.prep-qty-val{ font-size:19px; font-weight:500; min-width:74px; text-align:center; color:var(--ink); }
+.prep-modal-actions{ display:flex; gap:10px; margin-top:8px; }
+.prep-cancel{ flex:0 0 auto; background:transparent; border:1px solid var(--line); border-radius:12px; padding:13px 18px; font-size:13px; font-weight:500; color:var(--ink-soft); font-family:inherit; cursor:pointer; }
+.prep-save{ flex:1; background:var(--accent); border:none; border-radius:12px; padding:13px 0; font-size:13px; font-weight:500; color:var(--on-accent); font-family:inherit; cursor:pointer; }
+.prep-save:disabled{ background:var(--ink-mute); opacity:0.5; cursor:not-allowed; color:var(--paper); }
 .pose-select {
  display: flex;
  gap: 6px;
@@ -2485,7 +2539,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <button class="pill active" data-target="dashboard">Dashboard</button>
  <button class="pill" data-target="today">Today</button>
  <button class="pill" data-target="workout">Workout</button>
- <button class="pill" data-target="diet">Diet</button>
+ <button class="pill" data-target="diet">Meals</button>
  <button class="pill" data-target="track">Track</button>
  <button class="pill" data-target="eatout">Eating Out</button>
  <button class="pill" data-target="shop">Shop</button>
@@ -2663,7 +2717,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 
  <!-- Recent Meals Preview -->
  <div class="db-section-head">Recent meals</div>
- <div id="dbRecentMeals"><div class="db-empty">No meals logged yet — go to Diet to log</div></div>
+ <div id="dbRecentMeals"><div class="db-empty">No meals logged yet — go to Meals to log</div></div>
 
  <!-- Workout History -->
  <div class="db-section-head" style="margin-top:20px">Workout history</div>
@@ -2694,7 +2748,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 
 <!-- DIET -->
 <section class="section" id="diet">
- <div class="section-title">Diet</div>
+ <div class="section-title">Meals</div>
  <div class="section-desc">Log what you eat. Track calories and protein toward your daily goals.</div>
 
  <!-- FOOD LOGGER (top) -->
@@ -2770,21 +2824,32 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 
  <div class="fl-input-hint">Tap the green button (bottom-right) to log food by photo or text.</div>
 
- <!-- Today's AI Meal Suggestions -->
- <div class="sugg-divider">
- <span>Today's Suggestions</span>
+ <!-- Meal Prep shelf (v9.25) -->
+ <div id="prepShelf"></div>
+
+ <!-- Today's AI Meal Suggestions (collapsible) -->
+ <button class="meal-sub-head" id="suggHead" onclick="toggleMealSub('suggBody','suggHead')" aria-expanded="false">
+ <span class="meal-sub-title">Today's Suggestions</span>
+ <svg class="meal-sub-chev" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+ </button>
+ <div class="meal-sub-body" id="suggBody" hidden>
+ <div class="sugg-regen-row">
  <button class="sugg-regen" id="suggRegen" onclick="regenMealSuggestions()">
  <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.65 4.36A9 9 0 0 0 20.5 15"/></svg>
  New
  </button>
  </div>
  <div id="suggList"></div>
-
- <!-- Meal Plan Templates -->
- <div class="fl-plan-divider">
- <span>Meal Plan Templates</span>
  </div>
+
+ <!-- Meal Plan Templates (collapsible) -->
+ <button class="meal-sub-head" id="plansHead" onclick="toggleMealSub('plansBody','plansHead')" aria-expanded="false">
+ <span class="meal-sub-title">Meal Plan Templates</span>
+ <svg class="meal-sub-chev" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+ </button>
+ <div class="meal-sub-body" id="plansBody" hidden>
  <div id="mealsList"></div>
+ </div>
 </section>
 
 <!-- TRACK -->
@@ -3328,7 +3393,7 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="s-meta">Until next time</div>
  </button>
 
- <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.23</span></div>
+ <div class="menu-foot"><svg class="foot-mark" viewBox="18 6 64 84" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" aria-hidden="true"><circle cx="50" cy="21" r="8"/><path d="M50 33 L66.5 40 L59.5 64 L60 82 L40 82 L40.5 64 L33.5 40 Z"/></svg><span>Forge · v9.25</span></div>
 
  </div>
 </div>
@@ -3455,6 +3520,100 @@ html, body { transition: background-color 0.4s ease, color 0.4s ease; }
  <div class="coach-actions">
  <button class="coach-btn" onclick="coachDismissForever()">Don't show again</button>
  <button class="coach-btn primary" onclick="closeCoach()">Got it</button>
+ </div>
+ </div>
+</div>
+
+<!-- ===== MEAL PREP modals (v9.25) ===== -->
+<div class="modal-bg" id="prepCreateModal">
+ <div class="modal">
+ <div class="modal-title">New prep</div>
+ <div class="modal-sub">Cook a big batch once, then log portions from it all week.</div>
+
+ <div class="modal-row">
+ <div class="modal-label">Name</div>
+ <input class="modal-input" id="prepName" placeholder="e.g. Soya paneer tikkis" autocomplete="off">
+ </div>
+
+ <div class="modal-row">
+ <div class="modal-label">Ingredients (optional)</div>
+ <textarea class="modal-textarea" id="prepIngredients" placeholder="e.g. 100g soya chunks, 100g besan, 100g boiled chola, 200g low-fat paneer"></textarea>
+ <button class="prep-est-btn" id="prepEstBtn" onclick="prepEstimate()" style="margin-top:8px">Estimate macros from ingredients</button>
+ <div class="prep-status" id="prepEstStatus"></div>
+ </div>
+
+ <div class="modal-row">
+ <div class="modal-label">Batch totals</div>
+ <div class="prep-macro-grid">
+ <div><div class="prep-mini-label">Calories</div><input class="modal-input" id="prepKcal" type="number" inputmode="numeric" placeholder="kcal" oninput="prepUpdatePerServing()"></div>
+ <div><div class="prep-mini-label">Protein (g)</div><input class="modal-input" id="prepPro" type="number" inputmode="numeric" placeholder="g" oninput="prepUpdatePerServing()"></div>
+ <div><div class="prep-mini-label">Carbs (g)</div><input class="modal-input" id="prepCarb" type="number" inputmode="numeric" placeholder="g"></div>
+ <div><div class="prep-mini-label">Fat (g)</div><input class="modal-input" id="prepFat" type="number" inputmode="numeric" placeholder="g"></div>
+ </div>
+ </div>
+
+ <div class="modal-row">
+ <div class="modal-label">Portion by</div>
+ <div class="prep-seg" id="prepModeSeg">
+ <button class="on" data-mode="count" onclick="prepSetMode('count')">Count (servings)</button>
+ <button data-mode="weight" onclick="prepSetMode('weight')">Weight (grams)</button>
+ </div>
+ </div>
+
+ <div class="modal-row" id="prepCountRow">
+ <div class="modal-label">Makes how many?</div>
+ <input class="modal-input" id="prepServings" type="number" inputmode="numeric" placeholder="e.g. 9" oninput="prepUpdatePerServing()">
+ <input class="modal-input" id="prepUnit" placeholder="unit name — e.g. tikki, serving" style="margin-top:8px" autocomplete="off">
+ </div>
+ <div class="modal-row" id="prepWeightRow" style="display:none">
+ <div class="modal-label">Total cooked weight (g)</div>
+ <input class="modal-input" id="prepGrams" type="number" inputmode="numeric" placeholder="e.g. 1500" oninput="prepUpdatePerServing()">
+ </div>
+
+ <div class="prep-perserv" id="prepPerServ"></div>
+
+ <div class="modal-row" style="display:flex;align-items:center;justify-content:space-between;margin-top:18px">
+ <div class="modal-label" style="margin:0">Frozen</div>
+ <button type="button" class="s-toggle off" id="prepFrozenToggle" onclick="prepToggleFrozen()" aria-label="Frozen"></button>
+ </div>
+
+ <div class="prep-modal-actions">
+ <button class="prep-cancel" onclick="closePrepCreate()">Cancel</button>
+ <button class="prep-save" id="prepSaveBtn" onclick="prepSave()">Save prep</button>
+ </div>
+ </div>
+</div>
+
+<div class="modal-bg" id="prepLogModal">
+ <div class="modal">
+ <div class="modal-title" id="prepLogTitle">Log serving</div>
+ <div class="modal-sub" id="prepLogSub"></div>
+
+ <div class="modal-row">
+ <div class="modal-label" id="prepQtyLabel">How many servings?</div>
+ <div class="prep-qty-row">
+ <button class="prep-step" onclick="prepLogStep(-1)">−</button>
+ <div class="prep-qty-val" id="prepLogQty">1</div>
+ <button class="prep-step" onclick="prepLogStep(1)">+</button>
+ </div>
+ <div class="prep-status" id="prepLogMacros" style="text-align:center;margin-top:10px"></div>
+ </div>
+
+ <div class="modal-row">
+ <div class="modal-label">Add to meal</div>
+ <div class="prep-slot-grid" id="prepSlotGrid">
+ <button class="prep-slot" data-slot="preworkout" onclick="prepSetSlot('preworkout')">Pre-Workout</button>
+ <button class="prep-slot" data-slot="breakfast" onclick="prepSetSlot('breakfast')">Breakfast</button>
+ <button class="prep-slot" data-slot="lunch" onclick="prepSetSlot('lunch')">Lunch</button>
+ <button class="prep-slot" data-slot="snack" onclick="prepSetSlot('snack')">Snack</button>
+ <button class="prep-slot" data-slot="bridge" onclick="prepSetSlot('bridge')">Bridge</button>
+ <button class="prep-slot" data-slot="dinner" onclick="prepSetSlot('dinner')">Dinner</button>
+ </div>
+ </div>
+
+ <div class="prep-modal-actions">
+ <button class="prep-cancel" onclick="closePrepLog()">Cancel</button>
+ <button class="prep-save" id="prepLogConfirm" onclick="prepLogConfirm()">Log</button>
  </div>
  </div>
 </div>
@@ -3697,6 +3856,7 @@ let state = {
  steps: {},
  checklist: {},
  meals: {},
+ preps: [],
  lastCheckDate: null,
  streak: 0,
  lastStreakDay: null
@@ -3973,6 +4133,7 @@ async function initUserData(u) {
  startDate: START_DATE,
  checklist: {},
  meals: {},
+ preps: [],
  lastCheckDate: null,
  streak: 0,
  lastStreakDay: null
@@ -4044,8 +4205,10 @@ function attachListeners(u) {
  state.streak = d.streak || 0;
  state.lastStreakDay = d.lastStreakDay || null;
  state.steps = d.steps || {};
+ state.preps = Array.isArray(d.preps) ? d.preps : [];
  renderChecklist();
  renderMeals();
+ renderPreps();
  renderHero();
  if (activeSection === 'dashboard') renderDashboard();
  }
@@ -5095,7 +5258,7 @@ const DARK_KEY = 'forge_dark_mode';
 
 function applyTheme(dark) {
  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
- document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#131210' : '#faf8f3');
+ document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#18171a' : '#f6f4ef');
  const el = document.getElementById('darkModeMeta');
  if (el) el.textContent = dark ? 'On ✓' : 'Off';
 }
@@ -5116,7 +5279,7 @@ function toggleDarkMode() {
 (function() {
  const saved = localStorage.getItem(DARK_KEY);
  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
- const dark = saved ? saved === 'on' : prefersDark;
+ const dark = saved ? saved === 'on' : true; // night is the default look (v9.25); saved choice always wins
  if (dark && !saved) localStorage.setItem(DARK_KEY, 'on');
  applyTheme(dark);
 })();
@@ -5794,7 +5957,7 @@ async function logShake() {
  toast(`Protein shake logged — ${scoops * 25}g protein added`);
 }
 
-try{window.FORGE_BUILD='v9.23';console.log('%c[Forge] build v9.23 \u2014 voice logging + recipe mode active','color:#7bb86f;font-weight:700');var _av=document.getElementById('authVer');if(_av)_av.textContent='build v9.23 \u00b7 '+(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'app shell':'browser');}catch(e){}
+try{window.FORGE_BUILD='v9.25';console.log('%c[Forge] build v9.25 \u2014 Meals + Meal Prep + new palette','color:#f0b94e;font-weight:700');var _av=document.getElementById('authVer');if(_av)_av.textContent='build v9.25 \u00b7 '+(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'app shell':'browser');}catch(e){}
 /* ===== FORGE FOOD DB + ENGINE (injected; LLM parses, JS computes) ===== */
 /* ============================================================
    FORGE FOOD DATABASE  (FOOD_DB)
@@ -7065,7 +7228,7 @@ function renderRecentMeals() {
  ].slice(0,5);
 
  if (all.length === 0) {
- container.innerHTML = '<div class="db-empty">No meals logged yet — go to Diet to log</div>';
+ container.innerHTML = '<div class="db-empty">No meals logged yet — go to Meals to log</div>';
  return;
  }
  container.innerHTML = all.map(item => `
@@ -8497,6 +8660,288 @@ async function saveRecipeAsFood(name, t, P) {
   await saveUserFoods(list);
   toast('Saved "' + name + '" — type it any time' + (pot > 0 ? '' : ' (weigh the cooked pot once for katori-level accuracy)'));
 }
+/* =====================================================================
+   MEAL PREP (v9.25) — batch-cook once, log portions across the week.
+   Preps persist in state.preps (synced via saveMeta). Logging a serving
+   writes a normal food-log item (flows into rings) and counts the batch
+   down. Two portioning modes: count (servings) and weight (grams).
+   Also: toggleMealSub() powers the collapsible Meals subsections.
+   ===================================================================== */
+function toggleMealSub(bodyId, headId) {
+  const body = document.getElementById(bodyId), head = document.getElementById(headId);
+  if (!body || !head) return;
+  const opening = body.hasAttribute('hidden');
+  if (opening) { body.removeAttribute('hidden'); head.classList.add('open'); head.setAttribute('aria-expanded', 'true'); }
+  else { body.setAttribute('hidden', ''); head.classList.remove('open'); head.setAttribute('aria-expanded', 'false'); }
+  try { haptic('tap'); } catch (e) {}
+}
+
+let prepCreateMode = 'count';
+let prepFrozenNew = false;
+let prepLogCtx = null;
+
+function prepGenId() { return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function prepNum(id) { const el = $(id); const v = el ? parseFloat(el.value) : NaN; return (isFinite(v) && v > 0) ? v : 0; }
+function prepPerServing(p) {
+  if (p.mode === 'weight') { const g = p.grams || 1; return { kcal: p.kcal / g * 100, pro: p.pro / g * 100, carb: p.carb / g * 100, fat: p.fat / g * 100 }; }
+  const n = p.servings || 1; return { kcal: p.kcal / n, pro: p.pro / n, carb: p.carb / n, fat: p.fat / n };
+}
+function prepServingMacros(p, qty) {
+  const per = prepPerServing(p), mult = (p.mode === 'weight') ? qty / 100 : qty;
+  return { kcal: per.kcal * mult, pro: per.pro * mult, carb: per.carb * mult, fat: per.fat * mult };
+}
+function prepLeft(p) { return p.mode === 'weight' ? (p.gramsLeft != null ? p.gramsLeft : p.grams) : (p.servingsLeft != null ? p.servingsLeft : p.servings); }
+function prepUnitWord(p, n) {
+  if (p.mode === 'weight') return 'g';
+  const u = ((p.unit || 'serving') + '').trim() || 'serving';
+  return n === 1 ? u : (u.charAt(u.length - 1) === 's' ? u : u + 's');
+}
+function prepRelDate(iso) {
+  try {
+    const t = todayISO();
+    if (iso === t) return 'Made today';
+    const d = new Date(iso + 'T00:00:00'), now = new Date(t + 'T00:00:00');
+    const days = Math.round((now - d) / 86400000);
+    if (days === 1) return 'Made yesterday';
+    if (days > 1 && days < 7) return 'Made ' + days + ' days ago';
+    return 'Made ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  } catch (e) { return ''; }
+}
+
+/* ---------- shelf ---------- */
+function renderPreps() {
+  const host = $('prepShelf');
+  if (!host) return;
+  const preps = Array.isArray(state.preps) ? state.preps : [];
+  let html = '<div class="prep-head"><div class="prep-head-title">Meal Prep</div>'
+    + '<button class="prep-add" onclick="openPrepCreate()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New prep</button></div>';
+  if (!preps.length) {
+    html += '<div class="prep-empty">Cooked a big batch? Add it once here, then log portions from it all week — the macros stay exact and it counts itself down.</div>';
+    host.innerHTML = html;
+    return;
+  }
+  const sorted = preps.slice().sort((a, b) => ((prepLeft(b) > 0) - (prepLeft(a) > 0)) || ((b.createdAt || 0) - (a.createdAt || 0)));
+  sorted.forEach(p => {
+    const per = prepPerServing(p), left = prepLeft(p), done = left <= 0;
+    const meta = [];
+    const rd = p.made ? prepRelDate(p.made) : '';
+    if (rd) meta.push(rd);
+    meta.push(p.mode === 'weight' ? (Math.round(p.grams) + 'g batch') : (p.servings + ' ' + prepUnitWord(p, p.servings)));
+    const perLabel = p.mode === 'weight'
+      ? '<b>' + Math.round(per.kcal) + '</b> kcal · <b>' + Math.round(per.pro) + 'g</b> protein / 100g'
+      : '<b>' + Math.round(per.kcal) + '</b> kcal · <b>' + Math.round(per.pro) + 'g</b> protein / ' + (p.unit || 'serving');
+    const leftLabel = done ? 'All used' : ('<span class="prep-c-left">' + (p.mode === 'weight' ? (Math.round(left) + 'g left') : (left + ' of ' + p.servings + ' left')) + '</span>');
+    html += '<div class="prep-card' + (done ? ' done' : '') + '">'
+      + '<div class="prep-c-top"><div><div class="prep-c-name">' + escapeHTML(p.name) + '</div>'
+      + '<div class="prep-c-meta">' + meta.join(' · ') + '</div></div>'
+      + (p.frozen ? '<span class="prep-tag">Frozen</span>' : '') + '</div>'
+      + '<div class="prep-c-macros">' + perLabel + ' &nbsp;·&nbsp; ' + leftLabel + '</div>'
+      + '<div class="prep-c-actions">'
+      + (done
+        ? '<button class="prep-log-btn" onclick="prepRemake(\'' + p.id + '\')">Make again</button>'
+        : '<button class="prep-log-btn" onclick="openPrepLog(\'' + p.id + '\')">Log ' + (p.mode === 'weight' ? 'a portion' : escapeHTML(p.unit || 'serving')) + '</button>')
+      + '<button class="prep-icon-btn" onclick="deletePrep(\'' + p.id + '\')" aria-label="Delete prep"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>'
+      + '</div></div>';
+  });
+  host.innerHTML = html;
+}
+
+/* ---------- create modal ---------- */
+function openPrepCreate(prefill) {
+  prepCreateMode = (prefill && prefill.mode === 'weight') ? 'weight' : 'count';
+  prepFrozenNew = !!(prefill && prefill.frozen);
+  const setv = (id, v) => { const el = $(id); if (el) el.value = (v == null ? '' : v); };
+  setv('prepName', prefill ? prefill.name : '');
+  setv('prepIngredients', '');
+  setv('prepKcal', prefill ? prefill.kcal : '');
+  setv('prepPro', prefill ? prefill.pro : '');
+  setv('prepCarb', prefill ? prefill.carb : '');
+  setv('prepFat', prefill ? prefill.fat : '');
+  setv('prepServings', prefill ? prefill.servings : '');
+  setv('prepUnit', prefill ? prefill.unit : '');
+  setv('prepGrams', prefill ? prefill.grams : '');
+  const st = $('prepEstStatus'); if (st) st.textContent = '';
+  applyPrepMode(); applyPrepFrozen(); prepUpdatePerServing();
+  const m = $('prepCreateModal'); if (m) m.classList.add('open');
+  if (!prefill) setTimeout(() => { const n = $('prepName'); if (n) n.focus(); }, 250);
+}
+function closePrepCreate() { const m = $('prepCreateModal'); if (m) m.classList.remove('open'); }
+function prepSetMode(mode) { prepCreateMode = (mode === 'weight') ? 'weight' : 'count'; applyPrepMode(); prepUpdatePerServing(); try { haptic('tap'); } catch (e) {} }
+function applyPrepMode() {
+  document.querySelectorAll('#prepModeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === prepCreateMode));
+  const cr = $('prepCountRow'), wr = $('prepWeightRow');
+  if (cr) cr.style.display = (prepCreateMode === 'count') ? '' : 'none';
+  if (wr) wr.style.display = (prepCreateMode === 'weight') ? '' : 'none';
+}
+function prepToggleFrozen() { prepFrozenNew = !prepFrozenNew; applyPrepFrozen(); try { haptic('tap'); } catch (e) {} }
+function applyPrepFrozen() { const t = $('prepFrozenToggle'); if (t) { t.classList.toggle('on', prepFrozenNew); t.classList.toggle('off', !prepFrozenNew); } }
+function prepUpdatePerServing() {
+  const el = $('prepPerServ'); if (!el) return;
+  const k = prepNum('prepKcal'), p = prepNum('prepPro'), c = prepNum('prepCarb'), f = prepNum('prepFat');
+  if (!k) { el.textContent = ''; return; }
+  if (prepCreateMode === 'weight') {
+    const g = prepNum('prepGrams');
+    if (!g) { el.textContent = ''; return; }
+    el.textContent = 'Per 100g: ' + Math.round(k / g * 100) + ' kcal · ' + Math.round(p / g * 100) + 'g protein';
+  } else {
+    const n = prepNum('prepServings');
+    if (!n) { el.textContent = ''; return; }
+    const u = (($('prepUnit') && $('prepUnit').value) || 'serving').trim() || 'serving';
+    el.textContent = 'Each ' + u + ': ' + Math.round(k / n) + ' kcal · ' + Math.round(p / n) + 'g protein · ' + Math.round(c / n) + 'g carbs · ' + Math.round(f / n) + 'g fat';
+  }
+}
+async function prepEstimate() {
+  const ta = $('prepIngredients'); if (!ta) return;
+  const text = (ta.value || '').trim();
+  const st = $('prepEstStatus');
+  if (!text) { if (st) st.textContent = 'Type the ingredients first.'; return; }
+  const btn = $('prepEstBtn'); const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Estimating…'; }
+  if (st) st.textContent = 'Reading ingredients…';
+  try {
+    const res = await runRecipeParse(text, m => { if (st) st.textContent = m; });
+    const items = (res && res.items) || [];
+    const tot = items.reduce((a, it) => ({ k: a.k + (it.calories || 0), p: a.p + (it.protein || 0), c: a.c + (it.carbs || 0), f: a.f + (it.fat || 0) }), { k: 0, p: 0, c: 0, f: 0 });
+    const setv = (id, v) => { const el = $(id); if (el) el.value = Math.round(v); };
+    setv('prepKcal', tot.k); setv('prepPro', tot.p); setv('prepCarb', tot.c); setv('prepFat', tot.f);
+    prepUpdatePerServing();
+    if (st) st.textContent = 'Batch total filled in — tweak any value to match your packets.';
+  } catch (e) {
+    if (st) st.textContent = (e && e.message) ? e.message : 'Could not estimate — enter the totals manually.';
+  } finally { if (btn) { btn.disabled = false; btn.textContent = orig; } }
+}
+function prepSave() {
+  const name = (($('prepName') && $('prepName').value) || '').trim();
+  if (!name) { toast('Name your prep first'); return; }
+  const k = prepNum('prepKcal');
+  if (!k) { toast('Enter the batch calories (or estimate from ingredients)'); return; }
+  const prep = { id: prepGenId(), name: name, mode: prepCreateMode, kcal: Math.round(k), pro: Math.round(prepNum('prepPro')), carb: Math.round(prepNum('prepCarb')), fat: Math.round(prepNum('prepFat')), frozen: prepFrozenNew, made: todayISO(), createdAt: Date.now() };
+  if (prepCreateMode === 'weight') {
+    const g = prepNum('prepGrams');
+    if (!g) { toast('Enter the total cooked weight in grams'); return; }
+    prep.grams = Math.round(g); prep.gramsLeft = Math.round(g);
+  } else {
+    const n = prepNum('prepServings');
+    if (!n) { toast('How many servings does it make?'); return; }
+    prep.servings = Math.round(n); prep.servingsLeft = Math.round(n);
+    prep.unit = (($('prepUnit') && $('prepUnit').value) || 'serving').trim() || 'serving';
+  }
+  if (!Array.isArray(state.preps)) state.preps = [];
+  state.preps.unshift(prep);
+  saveMeta({ preps: state.preps });
+  renderPreps();
+  closePrepCreate();
+  try { haptic('success'); } catch (e) {}
+  toast('Prep saved — log a ' + (prep.mode === 'weight' ? 'portion' : (prep.unit || 'serving')) + ' anytime');
+}
+function prepRemake(id) {
+  const p = (state.preps || []).find(x => x.id === id);
+  if (!p) return;
+  openPrepCreate({ name: p.name, mode: p.mode, kcal: p.kcal, pro: p.pro, carb: p.carb, fat: p.fat, servings: p.servings, unit: p.unit, grams: p.grams, frozen: p.frozen });
+}
+function deletePrep(id) {
+  const p = (state.preps || []).find(x => x.id === id);
+  if (!p) return;
+  if (!confirm('Delete "' + p.name + '" from your preps?')) return;
+  state.preps = (state.preps || []).filter(x => x.id !== id);
+  saveMeta({ preps: state.preps });
+  renderPreps();
+  toast('Prep deleted');
+}
+
+/* ---------- log-a-serving modal ---------- */
+function prepDefaultSlot() {
+  const h = new Date().getHours();
+  if (h < 10) return 'breakfast';
+  if (h < 15) return 'lunch';
+  if (h < 18) return 'snack';
+  return 'dinner';
+}
+function openPrepLog(id) {
+  const p = (state.preps || []).find(x => x.id === id);
+  if (!p) return;
+  const left = prepLeft(p);
+  if (left <= 0) { toast('None left — make it again'); return; }
+  const isW = p.mode === 'weight';
+  prepLogCtx = { id: id, mode: p.mode, slot: prepDefaultSlot(), step: isW ? 25 : 1, qty: isW ? Math.min(150, left) : 1, max: left };
+  const t = $('prepLogTitle'); if (t) t.textContent = 'Log from ' + p.name;
+  const s = $('prepLogSub'); if (s) s.textContent = isW ? (Math.round(left) + 'g left in this batch') : (left + ' ' + prepUnitWord(p, left) + ' left');
+  const ql = $('prepQtyLabel'); if (ql) ql.textContent = isW ? 'How many grams?' : ('How many ' + prepUnitWord(p, 2) + '?');
+  applyPrepSlot(); prepRenderLogQty();
+  const m = $('prepLogModal'); if (m) m.classList.add('open');
+}
+function closePrepLog() { const m = $('prepLogModal'); if (m) m.classList.remove('open'); prepLogCtx = null; }
+function prepLogStep(dir) {
+  if (!prepLogCtx) return;
+  let q = prepLogCtx.qty + dir * prepLogCtx.step;
+  q = Math.max(prepLogCtx.step, Math.min(prepLogCtx.max, q));
+  prepLogCtx.qty = (prepLogCtx.mode === 'weight') ? Math.round(q) : q;
+  prepRenderLogQty(); try { haptic('tap'); } catch (e) {}
+}
+function prepSetSlot(s) { if (!prepLogCtx) return; prepLogCtx.slot = s; applyPrepSlot(); try { haptic('tap'); } catch (e) {} }
+function applyPrepSlot() {
+  document.querySelectorAll('#prepSlotGrid .prep-slot').forEach(b => b.classList.toggle('on', b.dataset.slot === (prepLogCtx && prepLogCtx.slot)));
+}
+function prepRenderLogQty() {
+  if (!prepLogCtx) return;
+  const p = (state.preps || []).find(x => x.id === prepLogCtx.id); if (!p) return;
+  const qEl = $('prepLogQty'); if (qEl) qEl.textContent = (prepLogCtx.mode === 'weight') ? (prepLogCtx.qty + 'g') : prepLogCtx.qty;
+  const m = prepServingMacros(p, prepLogCtx.qty);
+  const mEl = $('prepLogMacros'); if (mEl) mEl.textContent = Math.round(m.kcal) + ' kcal · ' + Math.round(m.pro) + 'g protein · ' + Math.round(m.carb) + 'g carbs · ' + Math.round(m.fat) + 'g fat';
+}
+async function prepLogConfirm() {
+  if (!prepLogCtx) return;
+  const p = (state.preps || []).find(x => x.id === prepLogCtx.id);
+  if (!p) { closePrepLog(); return; }
+  const qty = prepLogCtx.qty, slot = prepLogCtx.slot, isW = (p.mode === 'weight');
+  const m = prepServingMacros(p, qty);
+  const qtyLabel = isW ? (qty + 'g') : (qty + ' ' + prepUnitWord(p, qty));
+  const item = { name: p.name, quantity: qtyLabel, calories: Math.round(m.kcal), protein: Math.round(m.pro), carbs: Math.round(m.carb), fat: Math.round(m.fat), source: 'prep', prepId: p.id };
+  if (isW) item.grams = qty;
+  const btn = $('prepLogConfirm'); if (btn) btn.disabled = true;
+  try {
+    await commitFoodItems([item], slot, todayISO());
+    if (isW) p.gramsLeft = Math.max(0, (p.gramsLeft != null ? p.gramsLeft : p.grams) - qty);
+    else p.servingsLeft = Math.max(0, (p.servingsLeft != null ? p.servingsLeft : p.servings) - qty);
+    saveMeta({ preps: state.preps });
+    renderPreps();
+    if (foodLogDate === todayISO()) { renderFoodTotals(); renderFoodItems(); }
+    if (activeSection === 'dashboard') renderDashboard();
+    checkProteinAlert();
+    try { haptic('success'); } catch (e) {}
+    toast('Logged ' + qtyLabel + ' to ' + (QL_LABELS[slot] || slot) + ' · ' + Math.round(m.kcal) + ' kcal');
+    closePrepLog();
+  } catch (e) {
+    toast('Could not log — try again');
+  } finally { if (btn) btn.disabled = false; }
+}
+
+/* backdrop tap closes prep modals */
+['prepCreateModal', 'prepLogModal'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', e => { if (e.target === el) { el.classList.remove('open'); if (id === 'prepLogModal') prepLogCtx = null; } });
+});
+
+/* expose prep + collapse handlers */
+window.toggleMealSub = toggleMealSub;
+window.renderPreps = renderPreps;
+window.openPrepCreate = openPrepCreate;
+window.closePrepCreate = closePrepCreate;
+window.prepSetMode = prepSetMode;
+window.prepToggleFrozen = prepToggleFrozen;
+window.prepUpdatePerServing = prepUpdatePerServing;
+window.prepEstimate = prepEstimate;
+window.prepSave = prepSave;
+window.prepRemake = prepRemake;
+window.deletePrep = deletePrep;
+window.openPrepLog = openPrepLog;
+window.closePrepLog = closePrepLog;
+window.prepLogStep = prepLogStep;
+window.prepSetSlot = prepSetSlot;
+window.prepLogConfirm = prepLogConfirm;
+
+try { renderPreps(); } catch (e) {}
+
 window.openQuickLog = openQuickLog;
 window.closeQuickLog = closeQuickLog;
 window.qlSetCat = qlSetCat;
@@ -8529,7 +8974,7 @@ window.addEventListener('unhandledrejection', ev => {
   } catch (_) {}
 });
 (function selfCheck() {
-  const need = ['openQuickLog','closeQuickLog','qlSetCat','qlKeydown','qlResize','submitQuickLog','qlToggleMic','qlToggleRecipe','qlConfirmReview','qlDiscardReview','handleSignIn','toggleAuthMode','togglePassVis','logFood'];
+  const need = ['openQuickLog','closeQuickLog','qlSetCat','qlKeydown','qlResize','submitQuickLog','qlToggleMic','qlToggleRecipe','qlConfirmReview','qlDiscardReview','handleSignIn','toggleAuthMode','togglePassVis','logFood','toggleMealSub','renderPreps','openPrepCreate','prepSave','openPrepLog','prepLogConfirm'];
   const missing = need.filter(n => typeof window[n] !== 'function');
   if (missing.length) {
     console.error('[Forge] missing handlers:', missing);
